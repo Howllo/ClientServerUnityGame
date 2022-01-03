@@ -61,21 +61,22 @@ public class GetAccountInfoScript : MonoBehaviour
         GetPlayerAccountLevel();
     }
 
+    /// <summary>
+    /// Update Virtual Currency.
+    /// </summary>
     public void GetPlayerInventory()
     {
-        PlayFabClientAPI.GetUserInventory(new GetUserInventoryRequest(), OnInventorySuccesss, OnError);
-    }
-
-    private void OnInventorySuccesss(GetUserInventoryResult result)
-    {
-        getStamina = result.VirtualCurrency["AR"];
-        agencyResourcesText.text = getStamina.ToString() + "/64";
-        getEtherCredits = result.VirtualCurrency["EC"];
-        etherCreditText.text = getEtherCredits.ToString();
-        getAstralCredits = result.VirtualCurrency["AC"];
-        getAstralCredits += result.VirtualCurrency["FA"];
-        astralCreditText.text = getAstralCredits.ToString();
-        isInventoryLoadingFinished = true;
+        PlayFabClientAPI.GetUserInventory(new GetUserInventoryRequest(), result =>
+        {
+            getStamina = result.VirtualCurrency["AR"];
+            agencyResourcesText.text = getStamina.ToString() + "/64";
+            getEtherCredits = result.VirtualCurrency["EC"];
+            etherCreditText.text = getEtherCredits.ToString();
+            getAstralCredits = result.VirtualCurrency["AC"];
+            getAstralCredits += result.VirtualCurrency["FA"];
+            astralCreditText.text = getAstralCredits.ToString();
+            isInventoryLoadingFinished = true;
+        }, OnError);
     }
 
     private void GetDecrypedEmail()

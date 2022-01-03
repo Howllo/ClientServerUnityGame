@@ -583,6 +583,7 @@ private void LoginGameRequest()
         PlayerPrefs.DeleteKey("GetGUID");
         PlayerPrefs.DeleteKey("Key");
         PlayerPrefs.DeleteKey("RememberMe");
+        PlayerPrefs.DeleteKey("WhatLoginWasUsed");
         IsLoggedIn = false;
         getAccountIDGO.SetActive(false);
         topRightCanvas.SetActive(false);
@@ -671,13 +672,19 @@ private void LoginGameRequest()
     private void OnError(PlayFabError error)
     {
         string errorText = error.ToString();
-        errorText = errorText.Substring(25);
+        string[] errorSplitText = errorText.Split(':');
 
+        if(errorText.Contains("User not found") || errorText.Contains("The account is unavailable, because it is being deleted.") 
+            && PlayerPrefs.GetString("WhatLoginWasUsed") == "guessLogin")
+        {
+            LogoutOfGame();
+            PlayerPrefs.DeleteAll();
+        }
+            
         errorPopup.SetActive(true);
-        signupError.text = errorText;
+        signupError.text = errorSplitText[1];
         signupErrorGO.SetActive(true);
         guessLoginButton.interactable = true; 
-
         Debug.Log(error.GenerateErrorReport());
     }
 }

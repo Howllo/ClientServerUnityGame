@@ -1,6 +1,4 @@
 using System;
-using System.IO;
-using System.Net;
 using System.Collections;
 using System.Text;
 using UnityEngine;
@@ -12,7 +10,6 @@ public class CheckInternetConnections : MonoBehaviour
 {
     [Header("Display Information")]
     [SerializeField] private string URL = "https://iderrortdfunctions.azurewebsites.net/api/CheckPlayerConnection?code=nUDvXfn0svS7XkKwyoDRVmVR1kN3TpTRYrTP3PA6UKiirnQ1rsa5xA==";
-    //[SerializeField] private string URL2 = "https://ping.astralgames.net";
 
     //Public
     [Header("Monitoring Checks")]
@@ -27,12 +24,12 @@ public class CheckInternetConnections : MonoBehaviour
     [SerializeField] private LevelLoader levelLoader;
 
     public Button retryButton;
-    public Button confirmButton;
+    public Button cancelButton;
 
-    private void Start() 
-    { 
+    private void Start()
+    {
         retryButton.onClick.AddListener(RetryConnection);
-        confirmButton.onClick.AddListener(GoBackToMainMenu);
+        cancelButton.onClick.AddListener(GoBackToMainMenu);
         StartCoroutine(CheckConnection());
     }
 
@@ -76,37 +73,6 @@ public class CheckInternetConnections : MonoBehaviour
                     }
                 }
             }
-            ////Test 2.
-            //if (isConnected)
-            //{
-            //    for (float i = 15f; i > 0f; i -= Time.deltaTime)
-            //        yield return null;
-
-            //    string html = string.Empty;
-            //    HttpWebRequest req = (HttpWebRequest)WebRequest.Create(URL2);
-            //    try
-            //    {
-            //        using (HttpWebResponse resp = (HttpWebResponse)req.GetResponse())
-            //        {
-            //            bool isSuccess = (int)resp.StatusCode < 299 && (int)resp.StatusCode >= 200;
-            //            if (isSuccess)
-            //            {
-            //                using (StreamReader reader = new StreamReader(resp.GetResponseStream()))
-            //                {
-            //                    char[] cs = new char[42];
-            //                    reader.Read(cs, 0, cs.Length);
-            //                    foreach (char ch in cs)
-            //                    {
-            //                        html += ch;
-            //                    }
-            //                }
-            //            }
-            //        }
-            //    } catch (Exception ex)
-            //    {
-            //        Debug.LogException(ex);
-            //    }
-            //}
         }
     }
 
@@ -124,15 +90,40 @@ public class CheckInternetConnections : MonoBehaviour
                 tryReconnectText.text = "Retrying connection in: " + i.ToString("n0") + " second(s).";
                 if (!isConnected)
                     floatInformation += Time.deltaTime;
-                if (floatInformation >= 30)
-                {
+                if (floatInformation >= 90)
                     levelLoader.LoadLevel(0);
-                }
                 yield return null;
             }
-            StartCoroutine(CheckConnection());
+
+            GetConnection getConnection = new GetConnection();
+            getConnection.Ping = "Ping";
+            string jsonData = JsonUtility.ToJson(getConnection);
+            var request = new UnityWebRequest(URL, "POST");
+            byte[] bodyRaw = Encoding.UTF8.GetBytes(jsonData);
+            request.uploadHandler = (UploadHandler)new UploadHandlerRaw(bodyRaw);
+            request.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer();
+            request.SetRequestHeader("Content-Type", "application/json");
+            yield return request.SendWebRequest();
+            if (request.result != UnityWebRequest.Result.Success)
+            {
+                isConnected = false;
+                errorNetworkPopup.SetActive(true);
+                tryReconnectText.gameObject.SetActive(false);
+            }
+            else if (request.result == UnityWebRequest.Result.Success)
+            {
+                string jsonResults = request.downloadHandler.text;
+                GetConnection JsonObject = JsonUtility.FromJson<GetConnection>(jsonResults);
+                if (JsonObject.Ping == "Pong")
+                {
+                    isConnected = true;
+                    errorNetworkPopup.SetActive(false);
+                }
+            }
             howManyPingTest++;
-        }
+        } 
+        if(isConnected)
+            StartCoroutine(CheckConnection());
     }
 
     private void RetryConnection()
