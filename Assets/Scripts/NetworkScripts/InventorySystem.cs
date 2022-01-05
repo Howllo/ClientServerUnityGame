@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Collections.Generic;
 using UnityEngine;
 using PlayFab;
@@ -10,6 +9,7 @@ using DataStoringIDError;
 public class InventorySystem : MonoBehaviour
 {
     [SerializeField] private Check_InSystem checkInSystem;
+    private CatalogItem IncomingItem;
 
     public void Awake()
     {
@@ -21,7 +21,15 @@ public class InventorySystem : MonoBehaviour
         {
             int CheckTime = DateTime.Compare(DateTime.Now, Convert.ToDateTime(PlayerPrefs.GetString("LoginAfter")));
             if (CheckTime >= 0)
+            {
                 checkInSystem.checkinPopup.SetActive(true);
+            }   
+        }
+
+        if (!DataStoring.hasAlreadyRanInventorySystem)
+        {
+            GetCatagoryItems();
+            DataStoring.hasAlreadyRanInventorySystem = true;
         }
     }
 
@@ -33,56 +41,143 @@ public class InventorySystem : MonoBehaviour
         PlayFabClientAPI.GetUserInventory(new GetUserInventoryRequest(), results =>
         {
             DataStoring.playerInventory.Clear();
+            DataStoring.virtualCurrency.Clear();
+
             foreach (var item in results.Inventory)
             {
                 DataStoring.playerInventory.Add(item, item.RemainingUses.Value);
             }
+
+            foreach(var currency in results.VirtualCurrency)
+            {
+                if (currency.Key == "AC")
+                {
+                    DataStoring.virtualCurrency.Add(currency.Key, "Astral Credits");
+                }
+                else if (currency.Key == "AR")
+                {
+                    DataStoring.virtualCurrency.Add(currency.Key, "Agency Resource");
+                }
+                else if (currency.Key == "AR")
+                {
+                    DataStoring.virtualCurrency.Add(currency.Key, "Agency Resource");
+                }
+                else if (currency.Key == "BL")
+                {
+                    DataStoring.virtualCurrency.Add(currency.Key, "Bad Luck Token");
+                }
+                else if (currency.Key == "EC")
+                {
+                    DataStoring.virtualCurrency.Add(currency.Key, "Ethercredit");
+                }
+                else if (currency.Key == "FA")
+                {
+                    DataStoring.virtualCurrency.Add(currency.Key, "Free Astral Credits");
+                }
+                else if (currency.Key == "XP")
+                {
+                    DataStoring.virtualCurrency.Add(currency.Key, "Account Experience");
+                }
+
+            }
+
         }, OnError);
     }
 
     /// <summary>
-    /// Get all Catagory items and store in a cache in DataStore. Requires "using DataStoringIDError".
+    /// Get all Catagory items and cache it to DataStoring.
     /// </summary>
     public void GetCatagoryItems()
     {
-        List<CatalogItem> armorCatalogItems = new List<CatalogItem>();
-        List<CatalogItem> characterCatalogItems = new List<CatalogItem>();
-        List<CatalogItem> itemsCatalogItems = new List<CatalogItem>();
-        List<CatalogItem> resourcesCatalogItems = new List<CatalogItem>();
-        List<CatalogItem> charSkinsCatalogItems = new List<CatalogItem>();
-
-        int tempCountHolder = 0, oldCount = 0;
-        string itemNameID = "", lastItemName = "", processedString = "", p;
-
-        for (int i = 0; i < checkInSystem.Catagory.Length; i++)
+        PlayFabClientAPI.GetCatalogItems(new GetCatalogItemsRequest()
         {
-            PlayFabClientAPI.GetCatalogItems(new GetCatalogItemsRequest()
-            {
-                CatalogVersion = checkInSystem.Catagory[i],
-            }, results =>
-            {
-                if (i == 0)
-                    armorCatalogItems = new List<CatalogItem>(results.Catalog);
-                else if (i == 1)
-                    characterCatalogItems = new List<CatalogItem>(results.Catalog);
-                else if (i == 2)
-                    itemsCatalogItems = new List<CatalogItem>(results.Catalog);
-                else if (i == 3)
-                    resourcesCatalogItems = new List<CatalogItem>(results.Catalog);
-                else if (i == 4)
-                    charSkinsCatalogItems = new List<CatalogItem>(results.Catalog);
-            }, OnError);
-        }
-        DataStoring.catalogItemsCombined = new List<CatalogItem>(armorCatalogItems.Concat(characterCatalogItems).Concat(itemsCatalogItems).Concat(
-                                                    resourcesCatalogItems).Concat(charSkinsCatalogItems));
-        armorCatalogItems = null;
-        characterCatalogItems = null;
-        itemsCatalogItems = null;
-        resourcesCatalogItems = null;
-        charSkinsCatalogItems = null;
+            CatalogVersion = "Items"
+        }, results =>
+        {
+            DataStoring.catalogItems = new List<CatalogItem>(results.Catalog);
+        }, OnError);
     }
 
-    private void 
+    /// <summary>
+    /// Gets all bundle items and total amount for each bundle. Returns catalog and int.
+    /// </summary>
+    /// <param name="IncomingItem"></param>
+    /// <returns></returns>
+    public Dictionary<CatalogItem, int> GetBundleCount(string tempItemStr)
+    {
+        Dictionary<CatalogItem, int> Bundle = new Dictionary<CatalogItem, int>();
+        List<string> BundleNames = new List<string>();
+        List<int> BundleCount = new List<int>();
+        int x = 0;
+        int counter = 0;
+        string str = "";
+        foreach (var item in DataStoring.catalogItems)
+        {
+            if (item.ItemId == tempItemStr)
+            {
+                IncomingItem = item;
+            }
+        }
+
+        if (IncomingItem.Bundle == null)
+        {
+            return Bundle;
+        }
+
+        if(IncomingItem.Bundle.BundledItems.Count >= 1)
+        {
+            List<string> bundleItems = new List<string>(IncomingItem.Bundle.BundledItems);
+            for (int i = 0; i < IncomingItem.Bundle.BundledItems.Count; i++)
+            {
+                x++;
+                counter++;
+                if (x >= bundleItems.Count)
+                    x = bundleItems.Count - 1;
+                if (!BundleNames.Contains(bundleItems[i]))
+                {
+                    BundleNames.Add(bundleItems[i]);
+                }
+                if (bundleItems[i] != bundleItems[x] || i == bundleItems.Count-1)
+                {
+                    BundleCount.Add(counter);
+                    counter = 0;
+                }
+            }
+        }
+
+        if (IncomingItem.Bundle.BundledVirtualCurrencies != null)
+        {
+            foreach (var currency in IncomingItem.Bundle.BundledVirtualCurrencies)
+            {
+                foreach (var testCurrency in DataStoring.virtualCurrency)
+                {
+                    if (currency.Key == testCurrency.Key)
+                    {
+                        str = testCurrency.Value.Replace(" ", "").ToLower();
+                        foreach (var item in DataStoring.catalogItems)           //Item List needs to be sorted, and this process need to be sped up.
+                        {
+                            if (item.ItemId.ToLower() == str)
+                            {
+                                Bundle.Add(item, (int)currency.Value);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        foreach (var items in DataStoring.catalogItems)
+        {
+            for (int i = 0; i < BundleNames.Count; i++)
+            {
+                if(items.ItemId == BundleNames[i])
+                {
+                    Bundle.Add(items, BundleCount[i]);
+                }
+            }
+        }
+        return Bundle;
+    }
 
     private void OnError(PlayFabError error)
     {

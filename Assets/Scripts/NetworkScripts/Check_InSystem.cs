@@ -1,5 +1,4 @@
 using System;
-using System.Linq;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -12,7 +11,7 @@ using PlayFab.CloudScriptModels;
 using DataStoringIDError;
 using TitleDateInfo;
 
-public class Check_InSystem : MonoBehaviour, IPointerUpHandler
+public class Check_InSystem : MonoBehaviour
 {
     [Header("Scripts")]
     [SerializeField] private InventorySystem inventorySystem;
@@ -23,11 +22,12 @@ public class Check_InSystem : MonoBehaviour, IPointerUpHandler
     public string PlayerTrackerName = "";
     public string TitleDataTrackerName = "";
     public string WeeklyOrMonthly = "";
-    public string[] Catagory = { "Items", "Characters" };
-    public string BundleClass = "bundlePackage";
 
     [Header("Popup Info")]
-    public GameObject checkinPopup, informationPopup, InfoPackagePopup;
+    public GameObject checkinPopup;
+    public GameObject informationPopup;
+    public GameObject InfoPackagePopup;
+    public string[] Catagory = { "Items", "Characters" };
     [SerializeField] private Button getReceivedButton;
     [SerializeField] private Image displayImage, displayImage_BundleOne, displayImage_BundleTwo;
     [SerializeField] private TextMeshProUGUI itemInformation, itemCount, itemName;
@@ -36,9 +36,12 @@ public class Check_InSystem : MonoBehaviour, IPointerUpHandler
     [SerializeField] private List<TextMeshProUGUI> textInfo = new List<TextMeshProUGUI>();
     [SerializeField] private List<Image> buttonImages = new List<Image>();
     [SerializeField] private List<Button> getItemInfoButton = new List<Button>();
+    private Dictionary<CatalogItem, int> bundleHolder = new Dictionary<CatalogItem, int>();
     private string GetTitleJsonData = "";
-    private uint highestStreak = 0;
+    private List<string> tempList = new List<string>();
     private DateTime AfterDate;
+    private int p = 0;
+
 
     private void Awake()
     {
@@ -60,82 +63,53 @@ public class Check_InSystem : MonoBehaviour, IPointerUpHandler
     private void Start()
     {
         GetTitleDataInformation();
-        getReceivedButton.onClick.AddListener(GetPlayerWeekly);
+        getReceivedButton.onClick.AddListener(GetPlayerCheckinReward);
+        
+        for(int i = 0; i < getItemInfoButton.Count; i++)
+        {
+            getItemInfoButton[i].onClick.AddListener(OnClickInfo);
+        }
+
+        //Set all image and count automatically.
+        foreach (var text in textInfo)
+        {
+            tempList.Add(GetCorrectRewardSwitch((uint)p));
+            bundleHolder = new Dictionary<CatalogItem, int>(inventorySystem.GetBundleCount(tempList[p]));
+            if (bundleHolder.Count > 1)
+            {
+                foreach (var item in DataStoring.catalogItems)
+                {
+                    if (item.ItemId.Equals(tempList[p]))
+                    {
+                        text.text = "1";
+                        getItemInfoButton[p].transform.GetChild(0).GetComponent<Image>().sprite = Resources.Load<Sprite>(item.ItemImageUrl);
+                        getItemInfoButton[p].transform.GetChild(1).GetChild(0).GetComponent<TextMeshProUGUI>().text = "Day " + p + 1;
+                        getItemInfoButton[p].transform.GetChild(1).gameObject.SetActive(true);
+                    }
+                }
+            } else if (bundleHolder.Count == 1)
+            {
+                foreach(var item in bundleHolder)
+                {
+                    text.text = item.Value.ToString();
+                    getItemInfoButton[p].transform.GetChild(0).GetComponent<Image>().sprite = Resources.Load<Sprite>(item.Key.ItemImageUrl);
+                    getItemInfoButton[p].transform.GetChild(1).GetChild(0).GetComponent<TextMeshProUGUI>().text = "Day " + p + 1;
+                    getItemInfoButton[p].transform.GetChild(1).gameObject.SetActive(true);
+                }
+            }
+            p++;
+        }
     }
 
-    public void OnClickInfo(string RewardInformationm)
+    public void OnClickInfo()
     {
         string stringNum = EventSystem.current.currentSelectedGameObject.name;
         Debug.Log(stringNum);
         uint buttonNumber = Convert.ToUInt32(stringNum);
-        Dictionary<string, int> itemList = new Dictionary<string, int>();
-        int j = 0, c = 0;
 
-        //Display the Amount in Inventory - Single Item
-        foreach(var items2 in DataStoring.catalogItemsCombined)
+        foreach (var item in DataStoring.playerInventory)
         {
-            if(items2.ItemId == GetCorrectRewardSwitch(buttonNumber).ToString())
-            {
-                items2.Bundle.BundledItems.Sort();
-                //Doubles
-                if(items2.Bundle.BundledItems.First() != items2.Bundle.BundledItems.Last())
-                {
-                    itemList.Clear();
-                    //Get Item Amount
-                    for (int i = 0; i < items2.Bundle.BundledItems.Count; i++)
-                    {
-                        if (items2.Bundle.BundledItems.Contains(items2.Bundle.BundledItems.First()))
-                            j++;
-                        else if (items2.Bundle.BundledItems.Contains(items2.Bundle.BundledItems.Last()))
-                            c++;
-                    }
-                    itemList.Add(items2.Bundle.BundledItems.First(), j);
-                    itemList.Add(items2.Bundle.BundledItems.Last(), c);
 
-                    foreach (var item in DataStoring.playerInventory)
-                    {
-                        if (item.Key.ItemId.ToString() == items2.ItemId)
-                        {
-                            itemInformation_BundleOne.text = items2.Description;
-                            displayImage_BundleOne.sprite = Resources.Load<Sprite>(items2.ItemImageUrl);
-                            itemCount_BundleOne.text = item.Key.RemainingUses.ToString();
-                            itemName_BundleOne.text = item.Key.DisplayName.ToString();
-                            break;
-                        }
-                    }
-                    foreach (var item in DataStoring.playerInventory)
-                    {
-                        if (item.Key.ItemId.ToString() == items2.ItemId)
-                        {
-                            itemInformation_BundleTwo.text = items2.Description;
-                            displayImage_BundleTwo.sprite = Resources.Load<Sprite>(items2.ItemImageUrl);
-                            itemCount_BundleTwo.text = item.Key.RemainingUses.ToString();
-                            itemName_BundleTwo.text = item.Key.DisplayName.ToString();
-                            InfoPackagePopup.SetActive(true);
-                            break;
-                        }
-                    }
-                    break;
-                }//Single
-                else
-                {
-                    itemList.Clear();
-                    itemList.Add(items2.Bundle.BundledItems[0], items2.Bundle.BundledItems.Count());
-                    foreach (var item in DataStoring.playerInventory)
-                    {
-                        if (item.Key.ItemId.ToString() == items2.ItemId)
-                        {
-                            itemInformation.text = items2.Description;
-                            displayImage.sprite = Resources.Load<Sprite>(items2.ItemImageUrl);
-                            itemCount.text = item.Key.RemainingUses.ToString();
-                            itemName.text = item.Key.DisplayName.ToString();
-                            informationPopup.SetActive(true);
-                            break;
-                        }
-                    }
-                    break;
-                }
-            }
         }
     }
 
@@ -156,35 +130,39 @@ public class Check_InSystem : MonoBehaviour, IPointerUpHandler
     {
         PlayFabClientAPI.GetTitleData(new GetTitleDataRequest()
         {
-            Keys = null
+            Keys = new List<string>
+            {
+                TitleDataTrackerName,
+            }
         }, results =>
         {
-            GetTitleJsonData = results.Data[TitleDataTrackerName].ToString();
+            GetTitleJsonData = results.Data[TitleDataTrackerName];
         }, OnError);
     }
 
     //Cloud script | Grants items if after x amount of time.
-    private void GetPlayerWeekly()
+    private void GetPlayerCheckinReward()
     {
         string PlayerAccountID = PlayerPrefs.GetString("PlayerAccountID");
-        ItemInstance tempInstance = null;
-        int tempCount = 0;
-
+        getReceivedButton.interactable = false;
         try
         {
-            if(PlayerPrefs.GetString("LoginAfter") != null)
+            if(PlayerPrefs.HasKey("LoginAfter"))
                 AfterDate = Convert.ToDateTime(PlayerPrefs.GetString("LoginAfter"));
         } catch (Exception e)
         {
             Debug.Log(e);
         }
 
-        //Return if Now is less than AfterDate
+        //Return if the date is time for the next reward to prevent unnecessary API calls.
         if (AfterDate != null)
         {
             int dateResults = DateTime.Compare(DateTime.Now, AfterDate);
             if (dateResults < 0)
+            {
+                getReceivedButton.interactable = true;
                 return;
+            }
         }
 
         PlayFabCloudScriptAPI.ExecuteFunction(new ExecuteFunctionRequest()
@@ -205,18 +183,11 @@ public class Check_InSystem : MonoBehaviour, IPointerUpHandler
         }, results =>
         {
             GetJson retrieveFromJson = JsonUtility.FromJson<GetJson>(results.FunctionResult.ToString());
-            highestStreak = retrieveFromJson.HighestStreak;
+            List<string> holderItemCountList = new List<string>();
             AfterDate = Convert.ToDateTime(retrieveFromJson.LoginAfter);
-            getAccountInfoScript.GetPlayerInventory();
-            foreach(var item in DataStoring.catalogItemsCombined)
-            {
-                if (item. Key.ToString() == retrieveFromJson.GrantedItem)
-                    tempInstance = item.Key;
-                if(item.Key.BundleContents.First() == item.Key.BundleContents.Last())
-                    tempCount = item.Key.BundleContents.Count();
-            }
-            if(tempInstance != null)
-                receivedItemScript.GetRewardPopup(tempInstance, tempCount);
+            getReceivedButton.interactable = true;
+            StartCoroutine(receivedItemScript.GetRewardPopup(retrieveFromJson.GrantedItem));
+            inventorySystem.PlayerInventory();
             getAccountInfoScript.GetPlayerInventory();
             GetPlayerData();
         }, OnError);
@@ -230,37 +201,37 @@ public class Check_InSystem : MonoBehaviour, IPointerUpHandler
 
         switch (DailyRewards)
         {
-            case 0: reward = titleData.day1.Reward; break;
-            case 1: reward = titleData.day2.Reward; break;
-            case 2: reward = titleData.day3.Reward; break;
-            case 3: reward = titleData.day4.Reward; break;
-            case 4: reward = titleData.day5.Reward; break;
-            case 5: reward = titleData.day6.Reward; break;
-            case 6: reward = titleData.day7.Reward; break;
-            case 7: reward = titleData.day8.Reward; break;
-            case 8: reward = titleData.day9.Reward; break;
-            case 9: reward = titleData.day10.Reward; break;
-            case 10: reward = titleData.day11.Reward; break;
-            case 11: reward = titleData.day12.Reward; break;
-            case 12: reward = titleData.day13.Reward; break;
-            case 13: reward = titleData.day14.Reward; break;
-            case 14: reward = titleData.day15.Reward; break;
-            case 15: reward = titleData.day16.Reward; break;
-            case 16: reward = titleData.day17.Reward; break;
-            case 17: reward = titleData.day18.Reward; break;
-            case 18: reward = titleData.day19.Reward; break;
-            case 19: reward = titleData.day20.Reward; break;
-            case 20: reward = titleData.day21.Reward; break;
-            case 21: reward = titleData.day22.Reward; break;
-            case 22: reward = titleData.day23.Reward; break;
-            case 23: reward = titleData.day24.Reward; break;
-            case 24: reward = titleData.day25.Reward; break;
-            case 25: reward = titleData.day26.Reward; break;
-            case 26: reward = titleData.day27.Reward; break;
-            case 27: reward = titleData.day28.Reward; break;
-            case 28: reward = titleData.day29.Reward; break;
-            case 29: reward = titleData.day30.Reward; break;
-            case 30: reward = titleData.day31.Reward; break;
+            case 0: reward = titleData.Day1.Reward; break;
+            case 1: reward = titleData.Day2.Reward; break;
+            case 2: reward = titleData.Day3.Reward; break;
+            case 3: reward = titleData.Day4.Reward; break;
+            case 4: reward = titleData.Day5.Reward; break;
+            case 5: reward = titleData.Day6.Reward; break;
+            case 6: reward = titleData.Day7.Reward; break;
+            case 7: reward = titleData.Day8.Reward; break;
+            case 8: reward = titleData.Day9.Reward; break;
+            case 9: reward = titleData.Day10.Reward; break;
+            case 10: reward = titleData.Day11.Reward; break;
+            case 11: reward = titleData.Day12.Reward; break;
+            case 12: reward = titleData.Day13.Reward; break;
+            case 13: reward = titleData.Day14.Reward; break;
+            case 14: reward = titleData.Day15.Reward; break;
+            case 15: reward = titleData.Day16.Reward; break;
+            case 16: reward = titleData.Day17.Reward; break;
+            case 17: reward = titleData.Day18.Reward; break;
+            case 18: reward = titleData.Day19.Reward; break;
+            case 19: reward = titleData.Day20.Reward; break;
+            case 20: reward = titleData.Day21.Reward; break;
+            case 21: reward = titleData.Day22.Reward; break;
+            case 22: reward = titleData.Day23.Reward; break;
+            case 23: reward = titleData.Day24.Reward; break;
+            case 24: reward = titleData.Day25.Reward; break;
+            case 25: reward = titleData.Day26.Reward; break;
+            case 26: reward = titleData.Day27.Reward; break;
+            case 27: reward = titleData.Day28.Reward; break;
+            case 28: reward = titleData.Day29.Reward; break;
+            case 29: reward = titleData.Day30.Reward; break;
+            case 30: reward = titleData.Day31.Reward; break;
         }
 
         return reward;
@@ -279,3 +250,75 @@ public class GetJson
     public string LoginAfter;
     public string GrantedItem;
 }
+
+
+
+
+
+////Display the Amount in Inventory - Single Item
+//foreach (var items in DataStoring.catalogItems)
+//{
+
+//    holderString = GetCorrectRewardSwitch(buttonNumber);
+//    if (items.ItemId == holderString
+//            {
+//        //Doubles
+//        if (items.Bundle.BundledItems[0] != items.Bundle.BundledItems[items.Bundle.BundledItems.Count - 1])
+//        {
+//            itemList.Clear();
+//            //Get Item Amount
+//            for (int i = 0; i < items.Bundle.BundledItems.Count; i++)
+//            {
+//                if (items.Bundle.BundledItems.Contains(items.Bundle.BundledItems[0]))
+//                    j++;
+//                else if (items.Bundle.BundledItems.Contains(items.Bundle.BundledItems[items.Bundle.BundledItems.Count - 1]))
+//                    c++;
+//            }
+//            itemList.Add(items.Bundle.BundledItems[0], j);
+//            itemList.Add(items.Bundle.BundledItems[items.Bundle.BundledItems.Count - 1], c);
+
+//            foreach (var item in DataStoring.playerInventory)
+//            {
+//                if (item.Key.ItemId.ToString() == items.ItemId)
+//                {
+//                    itemInformation_BundleOne.text = items.Description;
+//                    displayImage_BundleOne.sprite = Resources.Load<Sprite>(items.ItemImageUrl);
+//                    itemCount_BundleOne.text = item.Key.RemainingUses.ToString();
+//                    itemName_BundleOne.text = item.Key.DisplayName.ToString();
+//                    break;
+//                }
+//            }
+//            foreach (var item in DataStoring.playerInventory)
+//            {
+//                if (item.Key.ItemId.ToString() == items.ItemId)
+//                {
+//                    itemInformation_BundleTwo.text = items.Description;
+//                    displayImage_BundleTwo.sprite = Resources.Load<Sprite>(items.ItemImageUrl);
+//                    itemCount_BundleTwo.text = item.Key.RemainingUses.ToString();
+//                    itemName_BundleTwo.text = item.Key.DisplayName.ToString();
+//                    InfoPackagePopup.SetActive(true);
+//                    break;
+//                }
+//            }
+//            break;
+//        }//Single
+//        else
+//        {
+//            itemList.Clear();
+//            itemList.Add(items.Bundle.BundledItems[0], items.Bundle.BundledItems.Count);
+//            foreach (var item in DataStoring.playerInventory)
+//            {
+//                if (item.Key.ItemId.ToString() == items.ItemId)
+//                {
+//                    itemInformation.text = items.Description;
+//                    displayImage.sprite = Resources.Load<Sprite>(items.ItemImageUrl);
+//                    itemCount.text = item.Key.RemainingUses.ToString();
+//                    itemName.text = item.Key.DisplayName.ToString();
+//                    informationPopup.SetActive(true);
+//                    break;
+//                }
+//            }
+//            break;
+//        }
+//    }
+//}

@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
-using PlayFab;
 using PlayFab.ClientModels;
 using DataStoringIDError;
 
@@ -14,70 +13,59 @@ public class ReceivedItemScript : MonoBehaviour
     [SerializeField] private GameObject receivedRewardPopup;
     [SerializeField] private GameObject clickableReward;
     [SerializeField] private GameObject parentObject;
-    private TextMeshProUGUI[] getAllText;
-    private GameObject[] GetGameObject;
-
-    private void Start()
-    {
-        GetGameObject[0] = clickableReward;
-    }
+    private GameObject[] GetClickableButtonObjects = new GameObject[8];
+    public float WaitSeconds = 0.5f;
 
     /// <summary>
-    /// Dispaly all reward that the player recieved. Max of 8 rewards are allowed.
+    /// Display all reward that the player recieved. Max of 8 rewards are allowed and bundles only.
     /// </summary>
-    /// <param name="WhatReward"></param>
-    /// <param name="AmountItems"></param>
-    public void GetRewardPopup(ItemInstance[] WhatReward, int[] AmountItems)
+    /// <param name="IncomingItem"></param>
+    public IEnumerator GetRewardPopup(string IncomingItem)
     {
-        var newItem = Instantiate(clickableReward, transform.position, Quaternion.identity);
-        Image imageChild;
+        Dictionary<CatalogItem, int> BundlePairs = new Dictionary<CatalogItem, int>(inventorySystem.GetBundleCount(IncomingItem));
         TextMeshProUGUI child;
+        CatalogItem tempItem;
+        int i = 0;
+        bool setActiveOnce = false;
 
-        for (float i = AmountItems.Length; i > 0; i -= Time.deltaTime)
+        foreach (var item in DataStoring.catalogItems)
         {
-            foreach(var getItemID in DataStoring.catalogItemsCombined)
+            if (item.ItemId == IncomingItem)
             {
-                if(getItemID.ItemId == WhatReward[(int)i].ItemId)
-                {
-                    imageChild = Resources.Load<Image>(getItemID.ItemImageUrl);
-                    break;
-                }
-            }
-            newItem.transform.SetParent(parentObject.gameObject.transform, false);
-            GetGameObject[(int)i] = newItem;
-            child = GetGameObject[(int)i].transform.GetChild(2).GetComponent<TextMeshProUGUI>();
-            child.text = AmountItems.ToString();
-
-            audioManagement.PlaySoundClip(1);
-            if (Input.anyKey)
-            {
-                for(int k = (int)i; k < AmountItems.Length; k++)
-                {
-                    foreach (var getItemID in DataStoring.catalogItemsCombined)
-                    {
-                        if (getItemID.ItemId == WhatReward[(int)i].ItemId)
-                        {
-                            imageChild = Resources.Load<Image>(getItemID.ItemImageUrl);
-                            break;
-                        }
-                    }
-                    newItem.transform.SetParent(parentObject.gameObject.transform, false);
-                    GetGameObject[k] = newItem;
-                    child = GetGameObject[k].transform.GetChild(2).GetComponent<TextMeshProUGUI>();
-                    child.text = AmountItems.ToString();
-                    audioManagement.PlaySoundClip(1);
-                }
-                break;
+                tempItem = item;
             }
         }
-        receivedRewardPopup.SetActive(true);
+
+        foreach (var items in BundlePairs)
+        {
+            if (i > 8)
+                break;
+
+            yield return new WaitForSeconds(WaitSeconds);
+            if (!setActiveOnce)
+            {
+                receivedRewardPopup.SetActive(true);
+                setActiveOnce = true;
+            }
+            GetClickableButtonObjects[i] = Instantiate(clickableReward, transform.position, Quaternion.identity);
+            GetClickableButtonObjects[i].name = $"{i}+";
+            GetClickableButtonObjects[i].transform.SetParent(parentObject.gameObject.transform, false);
+            child = GetClickableButtonObjects[i].transform.GetChild(2).GetComponent<TextMeshProUGUI>();
+            child.text = items.Value.ToString();
+            if (items.Key.ItemImageUrl != null)
+            {
+                GetClickableButtonObjects[i].transform.GetChild(0).GetComponent<Image>().sprite = Resources.Load<Sprite>(items.Key.ItemImageUrl);
+            }   
+            audioManagement.PlaySoundClip(1);
+            i++;
+        }
     }
 
     private void OnDisable()
     {
-        for(int i =0; i < GetGameObject.Length; i++)
+        for(int i =0; i < GetClickableButtonObjects.Length; i++)
         {
-            Destroy(GetGameObject[i]);
+            Destroy(GetClickableButtonObjects[i]);
         }
     }
 }

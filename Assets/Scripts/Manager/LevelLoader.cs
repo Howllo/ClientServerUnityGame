@@ -4,7 +4,6 @@ using UnityEngine.SceneManagement;
 
 public class LevelLoader : MonoBehaviour
 {
-    [SerializeField] private AudioManagement audioManagement;
     [SerializeField] private GameObject loadingScreen;
     [SerializeField] private Animation getAnimation;
     [SerializeField] private GetAccountInfoScript getAccountInfoScript;

@@ -243,40 +243,62 @@ public class AccountSystem : MonoBehaviour
     public void DisplayNameRegisterRequest()
     {
         string str = "";
+        int randomInt = 0;
         string specialChar = @"\|!#$%&/()=?»«@£§€{}.-;'<>_, ";
         string randomChar = "1234567890ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
         Profanity profanity = new Profanity();
 
         //Check the for special characters.
         for (int i = 0; i < usernameInputField.text.Length; i++)
+        {
             for (int k = 0; k < specialChar.Length; k++)
+            {
                 if (usernameInputField.text[i] == specialChar[k])
+                {
                     return;
+                }
+            }
+        }
 
         if (PlayerPrefs.GetString("WhatLoginWasUsed") == "guessLogin")
         {
-            int rnd = Random.Range(0, 1);
-            if (rnd == 0)
+            int rnd = Random.Range(0, 5);
+            if (rnd >= 0 && rnd <= 2)
+            {
                 str = "iderror#";
-            else if (rnd == 1)
+            }
+            else if (rnd >= 3 && rnd <= 5)
+            {
                 str = "iderrortd#";
+            }
         }
         else if (PlayerPrefs.GetString("WhatLoginWasUsed") == "register")
+        {
             str = usernameInputField.text + "#";
+        }
 
-        for (int i = 0; i < Random.Range(4,6); i++)
+        for(int i = 0; i < 5; i++)
+        {
+            randomInt = Random.Range(4, 6);
+        }
+
+        for (int i = 0; i < randomInt; i++)
+        {
             str += randomChar[Random.Range(0, 46)];
+        }
 
         //Check the profanity list.
         for (int i = 0; i < profanity.filterList.Length; i++)
-            if (usernameInputField.text.ToLower().Contains(profanity.filterList[i]))
+        {
+            if (usernameInputField.text.ToLower().Contains(profanity.filterList[i].ToLower())){
                 return;
+            }
+        }
 
         var request = new UpdateUserTitleDisplayNameRequest
         {
             DisplayName = str
         };
-
         PlayFabClientAPI.UpdateUserTitleDisplayName(request, OnUserSuccess, OnError);
     }
 
@@ -343,7 +365,7 @@ private void LoginGameRequest()
         {
             TitleId = "7ED66",
             CreateAccount = true,
-            CustomId = getNewGUID.ToString(),
+            CustomId = currentGUID
         };
 
         PlayFabClientAPI.LoginWithCustomID(request, OnLoginGuesssSuccess, OnError);
@@ -357,7 +379,7 @@ private void LoginGameRequest()
         {
             TitleId = "7ED66",
             CreateAccount = false,
-            CustomId = getGUID.ToString()
+            CustomId = getGUID
         };
         PlayFabClientAPI.LoginWithCustomID(request, OnLoginGuesssSuccess, OnError);
     }
@@ -524,8 +546,10 @@ private void LoginGameRequest()
     private void OnLoginGuesssSuccess(LoginResult result)
     {
         PlayerPrefs.SetString("WhatLoginWasUsed", "guessLogin");
-        if(isNewPlayer)
+        if (isNewPlayer)
+        {
             DisplayNameRegisterRequest();
+        }
         currentSessionTicket = result.SessionTicket;
         getAccountID.text = "ID:" + result.PlayFabId.ToString();
         accountInfoID = result.PlayFabId.ToString();

@@ -21,6 +21,7 @@ public class GetAccountInfoScript : MonoBehaviour
     [SerializeField] private int getAstralCredits = 0;
     private bool isInventoryLoadingFinished = false;
     [SerializeField] private RememberMeEncryption rememberMeEncryption;
+    [SerializeField] private GameObject sessionExpired;
 
     //Private TextMeshPro
     [Header("TextMesh")]
@@ -151,6 +152,11 @@ public class GetAccountInfoScript : MonoBehaviour
 
     private void OnError(PlayFabError error)
     {
+        if(error.HttpCode == 1100 || error.HttpCode == 1074)
+        {
+            sessionExpired.SetActive(true);
+        }
+
         Debug.Log(error.ToString());
     }
 }

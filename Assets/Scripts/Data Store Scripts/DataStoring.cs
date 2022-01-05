@@ -8,17 +8,11 @@ namespace DataStoringIDError
 {
     public static class DataStoring
     {
+        public static bool hasAlreadyRanInventorySystem = false;
         public static bool isResourceBarClicked = false;
         public static string GetAPI = "";
-        public static List<CatalogItem> catalogItemsCombined = new List<CatalogItem>();
+        public static List<CatalogItem> catalogItems = new List<CatalogItem>();
         public static Dictionary<ItemInstance, int> playerInventory = new Dictionary<ItemInstance, int>();
-    }
-
-    public class InventoryItem : MonoBehaviour
-    {
-        public string DisplayName;
-        public string Description;
-        public string IconImage;
-        public int ItemCount;
+        public static Dictionary<string, string> virtualCurrency = new Dictionary<string, string>();
     }
 }
