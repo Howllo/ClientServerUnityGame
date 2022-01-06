@@ -10,6 +10,7 @@ using PlayFab.ClientModels;
 using PlayFab.CloudScriptModels;
 using DataStoringIDError;
 using TitleDateInfo;
+using Newtonsoft.Json;
 
 public class Check_InSystem : MonoBehaviour
 {
@@ -17,6 +18,7 @@ public class Check_InSystem : MonoBehaviour
     [SerializeField] private InventorySystem inventorySystem;
     [SerializeField] private GetAccountInfoScript getAccountInfoScript;
     [SerializeField] private ReceivedItemScript receivedItemScript;
+    [SerializeField] private AudioManagement audioManagement;
 
     [Header("What Type of Popup")]
     public string PlayerTrackerName = "";
@@ -33,72 +35,104 @@ public class Check_InSystem : MonoBehaviour
     [SerializeField] private TextMeshProUGUI itemInformation, itemCount, itemName;
     [SerializeField] private TextMeshProUGUI itemInformation_BundleOne, itemCount_BundleOne, itemName_BundleOne;
     [SerializeField] private TextMeshProUGUI itemInformation_BundleTwo, itemCount_BundleTwo, itemName_BundleTwo;
+    [SerializeField] private Button recievedReward;
     [SerializeField] private List<TextMeshProUGUI> textInfo = new List<TextMeshProUGUI>();
     [SerializeField] private List<Image> buttonImages = new List<Image>();
+    [SerializeField] private List<GameObject> getDayRibbon = new List<GameObject>();
+    [SerializeField] private List<TextMeshProUGUI> getDayText = new List<TextMeshProUGUI>();
     [SerializeField] private List<Button> getItemInfoButton = new List<Button>();
-    private Dictionary<CatalogItem, int> bundleHolder = new Dictionary<CatalogItem, int>();
-    private string GetTitleJsonData = "";
     private List<string> tempList = new List<string>();
+    private List<GetTitleData> titleData = new List<GetTitleData>();
     private DateTime AfterDate;
-    private int p = 0;
-
 
     private void Awake()
     {
-        inventorySystem.PlayerInventory();
+        if (PlayerPrefs.HasKey("HighestStreak"))
+        {
+            if (PlayerPrefs.GetInt("HighestStreak") >= 6)
+            {
+                PlayerPrefs.SetString("LastWeekly", TitleDataTrackerName);
+            }
+        }
 
-        //Only get CatagoryItems once per day. Reduce the amount of API calls.
-        if(!PlayerPrefs.HasKey("NextTime"))
+        //If the first last weekly does not equal the new weekly reset FirstTimeCheckin.
+        if (PlayerPrefs.HasKey("LastWeekly"))
         {
-            inventorySystem.GetCatagoryItems();
-            PlayerPrefs.SetString("NextTime", DateTime.Now.AddDays(1).ToString());
-        } else
-        {
-            int CheckTime = DateTime.Compare(DateTime.Now, Convert.ToDateTime(PlayerPrefs.GetString("NextTime")));
-            if(CheckTime >= 0)
-                inventorySystem.GetCatagoryItems();
+            if(PlayerPrefs.GetString("lastWeekly") != TitleDataTrackerName)
+            {
+                PlayerPrefs.SetString("FirstTimeCheckin", "true");
+            }
         }
     }
 
     private void Start()
     {
-        GetTitleDataInformation();
         getReceivedButton.onClick.AddListener(GetPlayerCheckinReward);
-        
-        for(int i = 0; i < getItemInfoButton.Count; i++)
+        SetCheckinInformation();
+        recievedReward.onClick.AddListener(DelayStampAfterRecievedItem);
+
+        if (PlayerPrefs.HasKey("FirstTimeCheckin"))
+        {
+            if (PlayerPrefs.GetString("FirstTimeCheckin").Equals("false"))
+            {
+                int intOne = PlayerPrefs.GetInt("HighestStreak");
+                for (int i = 0; i < getItemInfoButton.Count; i++)
+                {
+                    if (intOne >= i)
+                    {
+                        getItemInfoButton[i].transform.GetChild(3).gameObject.SetActive(true);
+                    }
+                    else if (intOne < i)
+                    {
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
+    //Set everything that has to do with the checkin.
+    //This mean image, items, amount, days, and set buttons.
+    private void SetCheckinInformation()
+    {
+        for (int i = 0; i < getItemInfoButton.Count; i++)
         {
             getItemInfoButton[i].onClick.AddListener(OnClickInfo);
         }
 
-        //Set all image and count automatically.
-        foreach (var text in textInfo)
+        try
         {
-            tempList.Add(GetCorrectRewardSwitch((uint)p));
-            bundleHolder = new Dictionary<CatalogItem, int>(inventorySystem.GetBundleCount(tempList[p]));
-            if (bundleHolder.Count > 1)
+            //Set Image, Date, and Count automatically.
+            for (int p = 0; p < getItemInfoButton.Count; p++)
             {
-                foreach (var item in DataStoring.catalogItems)
+                tempList.Add(GetCorrectRewardSwitch(p));
+                Dictionary<CatalogItem, int> bundleHolder = new Dictionary<CatalogItem, int>(inventorySystem.GetBundleCount(tempList[p]));
+                
+                if (bundleHolder.Keys.Count > 1 && bundleHolder != null)
                 {
-                    if (item.ItemId.Equals(tempList[p]))
+                    foreach (var item in DataStoring.catalogItems)
                     {
-                        text.text = "1";
-                        getItemInfoButton[p].transform.GetChild(0).GetComponent<Image>().sprite = Resources.Load<Sprite>(item.ItemImageUrl);
-                        getItemInfoButton[p].transform.GetChild(1).GetChild(0).GetComponent<TextMeshProUGUI>().text = "Day " + p + 1;
-                        getItemInfoButton[p].transform.GetChild(1).gameObject.SetActive(true);
+                        if (item.ItemId.Equals(tempList[p]))
+                        {
+                            textInfo[p].text = "1";
+                            buttonImages[p].sprite = Resources.Load<Sprite>(item.ItemImageUrl);
+                            getDayText[p].text = $"Day {p+1}";
+                            getDayRibbon[p].SetActive(true);
+                        }
                     }
                 }
-            } else if (bundleHolder.Count == 1)
-            {
-                foreach(var item in bundleHolder)
+                else if (bundleHolder.Keys.Count == 1 && bundleHolder != null)
                 {
-                    text.text = item.Value.ToString();
-                    getItemInfoButton[p].transform.GetChild(0).GetComponent<Image>().sprite = Resources.Load<Sprite>(item.Key.ItemImageUrl);
-                    getItemInfoButton[p].transform.GetChild(1).GetChild(0).GetComponent<TextMeshProUGUI>().text = "Day " + p + 1;
-                    getItemInfoButton[p].transform.GetChild(1).gameObject.SetActive(true);
+                    foreach (var item in bundleHolder)
+                    {
+                        textInfo[p].text = item.Value.ToString();
+                        buttonImages[p].sprite = Resources.Load<Sprite>(item.Key.ItemImageUrl);
+                        getDayText[p].text = $"Day {p+1}";
+                        getDayRibbon[p].SetActive(true);
+                    }
                 }
             }
-            p++;
-        }
+        } catch (Exception ex) { Debug.Log(ex); }
     }
 
     public void OnClickInfo()
@@ -123,20 +157,6 @@ public class Check_InSystem : MonoBehaviour
             GetJson getJson = JsonUtility.FromJson<GetJson>(results.Data[PlayerTrackerName].Value.ToString());
             AfterDate = Convert.ToDateTime(getJson.LoginAfter);
             PlayerPrefs.SetString("LoginAfter", AfterDate.ToString());
-        }, OnError);
-    }
-
-    private void GetTitleDataInformation()
-    {
-        PlayFabClientAPI.GetTitleData(new GetTitleDataRequest()
-        {
-            Keys = new List<string>
-            {
-                TitleDataTrackerName,
-            }
-        }, results =>
-        {
-            GetTitleJsonData = results.Data[TitleDataTrackerName];
         }, OnError);
     }
 
@@ -184,6 +204,8 @@ public class Check_InSystem : MonoBehaviour
         {
             GetJson retrieveFromJson = JsonUtility.FromJson<GetJson>(results.FunctionResult.ToString());
             List<string> holderItemCountList = new List<string>();
+            PlayerPrefs.SetInt("HighestStreak", retrieveFromJson.HighestStreak);
+            PlayerPrefs.SetString("FirstTimeCheckin", "false");
             AfterDate = Convert.ToDateTime(retrieveFromJson.LoginAfter);
             getReceivedButton.interactable = true;
             StartCoroutine(receivedItemScript.GetRewardPopup(retrieveFromJson.GrantedItem));
@@ -194,65 +216,59 @@ public class Check_InSystem : MonoBehaviour
     }
 
     //Get the reward information.
-    private string GetCorrectRewardSwitch(uint DailyRewards)
+    private string GetCorrectRewardSwitch(int DailyRewards)
     {
-        string reward = "";
-        GetTitleData titleData = JsonUtility.FromJson<GetTitleData>(GetTitleJsonData);
-
-        switch (DailyRewards)
+        string jsonresults = "";
+        if (TitleDataTrackerName.Contains("Consecutive"))
         {
-            case 0: reward = titleData.Day1.Reward; break;
-            case 1: reward = titleData.Day2.Reward; break;
-            case 2: reward = titleData.Day3.Reward; break;
-            case 3: reward = titleData.Day4.Reward; break;
-            case 4: reward = titleData.Day5.Reward; break;
-            case 5: reward = titleData.Day6.Reward; break;
-            case 6: reward = titleData.Day7.Reward; break;
-            case 7: reward = titleData.Day8.Reward; break;
-            case 8: reward = titleData.Day9.Reward; break;
-            case 9: reward = titleData.Day10.Reward; break;
-            case 10: reward = titleData.Day11.Reward; break;
-            case 11: reward = titleData.Day12.Reward; break;
-            case 12: reward = titleData.Day13.Reward; break;
-            case 13: reward = titleData.Day14.Reward; break;
-            case 14: reward = titleData.Day15.Reward; break;
-            case 15: reward = titleData.Day16.Reward; break;
-            case 16: reward = titleData.Day17.Reward; break;
-            case 17: reward = titleData.Day18.Reward; break;
-            case 18: reward = titleData.Day19.Reward; break;
-            case 19: reward = titleData.Day20.Reward; break;
-            case 20: reward = titleData.Day21.Reward; break;
-            case 21: reward = titleData.Day22.Reward; break;
-            case 22: reward = titleData.Day23.Reward; break;
-            case 23: reward = titleData.Day24.Reward; break;
-            case 24: reward = titleData.Day25.Reward; break;
-            case 25: reward = titleData.Day26.Reward; break;
-            case 26: reward = titleData.Day27.Reward; break;
-            case 27: reward = titleData.Day28.Reward; break;
-            case 28: reward = titleData.Day29.Reward; break;
-            case 29: reward = titleData.Day30.Reward; break;
-            case 30: reward = titleData.Day31.Reward; break;
+            jsonresults = JsonConvert.DeserializeObject(DataStoring.ConsecutiveTitleDataJson).ToString();
+            titleData = JsonConvert.DeserializeObject<List<GetTitleData>>(jsonresults);
+        } 
+        else if (TitleDataTrackerName.Contains("Event"))
+        {
+            jsonresults = JsonConvert.DeserializeObject(DataStoring.EventTitleDataJson).ToString();
+            titleData = JsonConvert.DeserializeObject<List<GetTitleData>>(jsonresults);
+        } 
+        else if (TitleDataTrackerName.Contains("Monthly"))
+        {
+            jsonresults = JsonConvert.DeserializeObject(DataStoring.MonthlyTitleDataJson).ToString();
+            titleData = JsonConvert.DeserializeObject<List<GetTitleData>>(jsonresults);
         }
+        return titleData[DailyRewards].Reward;
+    }
 
-        return reward;
+    private void DelayStampAfterRecievedItem()
+    {
+
+        int intOne = PlayerPrefs.GetInt("HighestStreak");
+        for (int i = 0; i < getItemInfoButton.Count; i++)
+        {
+            if (intOne >= i)
+            {
+                audioManagement.PlaySoundClip(2);
+                getItemInfoButton[i].transform.GetChild(3).gameObject.SetActive(true);
+            }
+            else if (intOne < i)
+            {
+                break;
+            }
+        }
     }
 
     private void OnError(PlayFabError error)
     {
+        if (error.Error.ToString().Contains("/CloudScript/ExecuteFunction: Invocation of cloud script function"))
+            getReceivedButton.interactable = true;
         Debug.Log(error);
     }
 }
 
-[Serializable]
 public class GetJson
 {
-    public uint HighestStreak;
+    public int HighestStreak;
     public string LoginAfter;
     public string GrantedItem;
 }
-
-
-
 
 
 ////Display the Amount in Inventory - Single Item

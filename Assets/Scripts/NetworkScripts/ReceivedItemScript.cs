@@ -15,6 +15,19 @@ public class ReceivedItemScript : MonoBehaviour
     [SerializeField] private GameObject parentObject;
     private GameObject[] GetClickableButtonObjects = new GameObject[8];
     public float WaitSeconds = 0.5f;
+    private bool runOnce = true;
+
+    private void Update()
+    {
+        if (!runOnce)
+        {
+            for (int i = 0; i < GetClickableButtonObjects.Length; i++)
+            {
+                Destroy(GetClickableButtonObjects[i]);
+            }
+            runOnce = true;
+        }
+    }
 
     /// <summary>
     /// Display all reward that the player recieved. Max of 8 rewards are allowed and bundles only.
@@ -22,6 +35,7 @@ public class ReceivedItemScript : MonoBehaviour
     /// <param name="IncomingItem"></param>
     public IEnumerator GetRewardPopup(string IncomingItem)
     {
+        runOnce = false;
         Dictionary<CatalogItem, int> BundlePairs = new Dictionary<CatalogItem, int>(inventorySystem.GetBundleCount(IncomingItem));
         TextMeshProUGUI child;
         CatalogItem tempItem;

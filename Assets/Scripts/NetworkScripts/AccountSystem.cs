@@ -160,7 +160,8 @@ public class AccountSystem : MonoBehaviour
         }
     }
 
-    //If the account does not connect to the server, unhide login.
+    //If the account does not connect to the server, unhide login. 
+    //This is a autologin feature to prevent creation of new accounts.
     private IEnumerator GetTotalTime()
     {
         dimmerCanvas.SetActive(false);

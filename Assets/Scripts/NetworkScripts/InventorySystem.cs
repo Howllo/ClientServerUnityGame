@@ -13,6 +13,62 @@ public class InventorySystem : MonoBehaviour
 
     public void Awake()
     {
+        PlayerInventory();
+        if (!DataStoring.hasRanCatalog)
+        {
+            GetCatagoryItems();
+        }
+        LoadJson();
+        StartCoroutine(WaitForJson());
+    }
+
+    private void LoadJson()
+    {
+        if (!DataStoring.hasRanTitleData)
+        {
+            PlayFabClientAPI.GetTitleData(new GetTitleDataRequest()
+            {
+                Keys = null
+            }, results =>
+            {
+                foreach (var item in results.Data)
+                {
+                    if (item.Key.Contains("Monthly"))
+                    {
+                        //Debug.Log($"Monthly");
+                        DataStoring.MonthlyTitleDataJson  = item.Value;
+                    } 
+                    else if (item.Key.Contains("Consecutive"))
+                    {
+                        //Debug.Log($"Consecutive \n {item.Value}");
+                        DataStoring.ConsecutiveTitleDataJson = item.Value;
+                    } 
+                    else if (item.Key.Contains("Event"))
+                    {
+                        //Debug.Log($"Event \n {item.Value}");
+                        DataStoring.EventTitleDataJson = item.Value;
+                    } 
+                    else if (item.Key.Contains("AchievementTitleDataJson"))
+                    {
+                       //Debug.Log($"Achievement \n {item.Value}");
+                        DataStoring.AchievementTitleDataJson = item.Value;
+                    } 
+                    else if (item.Key.Contains("Character"))
+                    {
+                        //Debug.Log($"Character \n {item.Value}");
+                        DataStoring.CharacterTitleDataJson = item.Value;
+                    }  
+                }
+                DataStoring.hasRanTitleData = true;
+            }, OnError); ;
+        }
+    }
+
+    //Wait until Json is loaded into cache.
+    private System.Collections.IEnumerator WaitForJson()
+    {
+        yield return new WaitUntil(() => DataStoring.hasRanTitleData && DataStoring.hasRanCatalog);
+
         if (!PlayerPrefs.HasKey("LoginAfter"))
         {
             checkInSystem.checkinPopup.SetActive(true);
@@ -23,15 +79,10 @@ public class InventorySystem : MonoBehaviour
             if (CheckTime >= 0)
             {
                 checkInSystem.checkinPopup.SetActive(true);
-            }   
-        }
-
-        if (!DataStoring.hasAlreadyRanInventorySystem)
-        {
-            GetCatagoryItems();
-            DataStoring.hasAlreadyRanInventorySystem = true;
+            }
         }
     }
+
 
     /// <summary>
     /// Inventory system that allows updating and getting of the player inventory. Requires "using DataStoringIDError".
@@ -40,19 +91,17 @@ public class InventorySystem : MonoBehaviour
     {
         PlayFabClientAPI.GetUserInventory(new GetUserInventoryRequest(), results =>
         {
-            DataStoring.playerInventory.Clear();
-            DataStoring.virtualCurrency.Clear();
-
+            DataStoring.playerInventory = new Dictionary<ItemInstance, int>();
+            DataStoring.virtualCurrency = new Dictionary<string, string>();
             foreach (var item in results.Inventory)
             {
                 DataStoring.playerInventory.Add(item, item.RemainingUses.Value);
             }
-
             foreach(var currency in results.VirtualCurrency)
             {
                 if (currency.Key == "AC")
                 {
-                    DataStoring.virtualCurrency.Add(currency.Key, "Astral Credits");
+                    DataStoring.virtualCurrency.Add(currency.Key, "Astral Credit");
                 }
                 else if (currency.Key == "AR")
                 {
@@ -72,7 +121,7 @@ public class InventorySystem : MonoBehaviour
                 }
                 else if (currency.Key == "FA")
                 {
-                    DataStoring.virtualCurrency.Add(currency.Key, "Free Astral Credits");
+                    DataStoring.virtualCurrency.Add(currency.Key, "Free Astral Credit");
                 }
                 else if (currency.Key == "XP")
                 {
@@ -80,7 +129,6 @@ public class InventorySystem : MonoBehaviour
                 }
 
             }
-
         }, OnError);
     }
 
@@ -89,12 +137,14 @@ public class InventorySystem : MonoBehaviour
     /// </summary>
     public void GetCatagoryItems()
     {
+        DataStoring.catalogItems = null;
         PlayFabClientAPI.GetCatalogItems(new GetCatalogItemsRequest()
         {
             CatalogVersion = "Items"
         }, results =>
         {
             DataStoring.catalogItems = new List<CatalogItem>(results.Catalog);
+            DataStoring.hasRanCatalog = true;
         }, OnError);
     }
 
@@ -111,6 +161,7 @@ public class InventorySystem : MonoBehaviour
         int x = 0;
         int counter = 0;
         string str = "";
+
         foreach (var item in DataStoring.catalogItems)
         {
             if (item.ItemId == tempItemStr)
@@ -119,12 +170,7 @@ public class InventorySystem : MonoBehaviour
             }
         }
 
-        if (IncomingItem.Bundle == null)
-        {
-            return Bundle;
-        }
-
-        if(IncomingItem.Bundle.BundledItems.Count >= 1)
+        if(IncomingItem.Bundle.BundledItems.Count >= 1 && IncomingItem != null)
         {
             List<string> bundleItems = new List<string>(IncomingItem.Bundle.BundledItems);
             for (int i = 0; i < IncomingItem.Bundle.BundledItems.Count; i++)
@@ -183,4 +229,11 @@ public class InventorySystem : MonoBehaviour
     {
         Debug.Log(error);
     }
+}
+
+public class InventoryJson
+{
+    public string ConsecutiveCheckin { get; set; }
+    public string EventCheckin { get; set; } 
+    public string MonthlyCheckin { get; set; }
 }
