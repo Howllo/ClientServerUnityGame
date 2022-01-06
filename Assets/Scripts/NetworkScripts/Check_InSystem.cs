@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -305,72 +304,3 @@ public class GetJson
     public string LoginAfter;
     public string GrantedItem;
 }
-
-
-////Display the Amount in Inventory - Single Item
-//foreach (var items in DataStoring.catalogItems)
-//{
-
-//    holderString = GetCorrectRewardSwitch(buttonNumber);
-//    if (items.ItemId == holderString
-//            {
-//        //Doubles
-//        if (items.Bundle.BundledItems[0] != items.Bundle.BundledItems[items.Bundle.BundledItems.Count - 1])
-//        {
-//            itemList.Clear();
-//            //Get Item Amount
-//            for (int i = 0; i < items.Bundle.BundledItems.Count; i++)
-//            {
-//                if (items.Bundle.BundledItems.Contains(items.Bundle.BundledItems[0]))
-//                    j++;
-//                else if (items.Bundle.BundledItems.Contains(items.Bundle.BundledItems[items.Bundle.BundledItems.Count - 1]))
-//                    c++;
-//            }
-//            itemList.Add(items.Bundle.BundledItems[0], j);
-//            itemList.Add(items.Bundle.BundledItems[items.Bundle.BundledItems.Count - 1], c);
-
-//            foreach (var item in DataStoring.playerInventory)
-//            {
-//                if (item.Key.ItemId.ToString() == items.ItemId)
-//                {
-//                    itemInformation_BundleOne.text = items.Description;
-//                    displayImage_BundleOne.sprite = Resources.Load<Sprite>(items.ItemImageUrl);
-//                    itemCount_BundleOne.text = item.Key.RemainingUses.ToString();
-//                    itemName_BundleOne.text = item.Key.DisplayName.ToString();
-//                    break;
-//                }
-//            }
-//            foreach (var item in DataStoring.playerInventory)
-//            {
-//                if (item.Key.ItemId.ToString() == items.ItemId)
-//                {
-//                    itemInformation_BundleTwo.text = items.Description;
-//                    displayImage_BundleTwo.sprite = Resources.Load<Sprite>(items.ItemImageUrl);
-//                    itemCount_BundleTwo.text = item.Key.RemainingUses.ToString();
-//                    itemName_BundleTwo.text = item.Key.DisplayName.ToString();
-//                    InfoPackagePopup.SetActive(true);
-//                    break;
-//                }
-//            }
-//            break;
-//        }//Single
-//        else
-//        {
-//            itemList.Clear();
-//            itemList.Add(items.Bundle.BundledItems[0], items.Bundle.BundledItems.Count);
-//            foreach (var item in DataStoring.playerInventory)
-//            {
-//                if (item.Key.ItemId.ToString() == items.ItemId)
-//                {
-//                    itemInformation.text = items.Description;
-//                    displayImage.sprite = Resources.Load<Sprite>(items.ItemImageUrl);
-//                    itemCount.text = item.Key.RemainingUses.ToString();
-//                    itemName.text = item.Key.DisplayName.ToString();
-//                    informationPopup.SetActive(true);
-//                    break;
-//                }
-//            }
-//            break;
-//        }
-//    }
-//}
