@@ -1,5 +1,8 @@
 namespace TitleDateInfo
 {
+    /// <summary>
+    /// Title data for getting infomation from checkin.
+    /// </summary>
     public class GetTitleData
     {
         /// <summary>

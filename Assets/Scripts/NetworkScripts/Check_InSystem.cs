@@ -28,14 +28,14 @@ public class Check_InSystem : MonoBehaviour
     [Header("Popup Info")]
     public GameObject checkinPopup;
     public GameObject informationPopup;
-    public GameObject InfoPackagePopup;
+
     public string[] Catagory = { "Items", "Characters" };
     [SerializeField] private Button getReceivedButton;
-    [SerializeField] private Image displayImage, displayImage_BundleOne, displayImage_BundleTwo;
-    [SerializeField] private TextMeshProUGUI itemInformation, itemCount, itemName;
-    [SerializeField] private TextMeshProUGUI itemInformation_BundleOne, itemCount_BundleOne, itemName_BundleOne;
-    [SerializeField] private TextMeshProUGUI itemInformation_BundleTwo, itemCount_BundleTwo, itemName_BundleTwo;
     [SerializeField] private Button recievedReward;
+    [SerializeField] private Image displayImage;
+    [SerializeField] private TextMeshProUGUI itemInformation;
+    [SerializeField] private TextMeshProUGUI itemCount;
+    [SerializeField] private TextMeshProUGUI itemName;
     [SerializeField] private List<TextMeshProUGUI> textInfo = new List<TextMeshProUGUI>();
     [SerializeField] private List<Image> buttonImages = new List<Image>();
     [SerializeField] private List<GameObject> getDayRibbon = new List<GameObject>();
@@ -108,20 +108,7 @@ public class Check_InSystem : MonoBehaviour
                 tempList.Add(GetCorrectRewardSwitch(p));
                 Dictionary<CatalogItem, int> bundleHolder = new Dictionary<CatalogItem, int>(inventorySystem.GetBundleCount(tempList[p]));
                 
-                if (bundleHolder.Keys.Count > 1 && bundleHolder != null)
-                {
-                    foreach (var item in DataStoring.catalogItems)
-                    {
-                        if (item.ItemId.Equals(tempList[p]))
-                        {
-                            textInfo[p].text = "1";
-                            buttonImages[p].sprite = Resources.Load<Sprite>(item.ItemImageUrl);
-                            getDayText[p].text = $"Day {p+1}";
-                            getDayRibbon[p].SetActive(true);
-                        }
-                    }
-                }
-                else if (bundleHolder.Keys.Count == 1 && bundleHolder != null)
+                if (bundleHolder != null)
                 {
                     foreach (var item in bundleHolder)
                     {
@@ -135,16 +122,66 @@ public class Check_InSystem : MonoBehaviour
         } catch (Exception ex) { Debug.Log(ex); }
     }
 
-    public void OnClickInfo()
+    /// <summary>
+    /// Get inventory count of items that the player has and display the item information.
+    /// </summary>
+    private void OnClickInfo()
     {
-        string stringNum = EventSystem.current.currentSelectedGameObject.name;
-        Debug.Log(stringNum);
-        uint buttonNumber = Convert.ToUInt32(stringNum);
+        string stringNum = EventSystem.current.currentSelectedGameObject.name;;
+        string GetRewardName = GetCorrectRewardSwitch(Convert.ToInt32(stringNum));
+        Dictionary<CatalogItem, int> bundleHolder = new Dictionary<CatalogItem, int>(inventorySystem.GetBundleCount(GetRewardName));
 
-        foreach (var item in DataStoring.playerInventory)
+        try
         {
-
-        }
+            foreach (var bundle in bundleHolder)
+            {
+                foreach (var item2 in DataStoring.catalogItems)
+                {
+                    if (item2.ItemId == bundle.Key.ItemId)
+                    {
+                        foreach (var item in DataStoring.playerInventory)
+                        {
+                            if (item2.ItemId == item.Key.ItemId)
+                            {
+                                displayImage.sprite = Resources.Load<Sprite>(item2.ItemImageUrl);
+                                itemInformation.text = item2.Description;
+                                itemCount.text = item.Key.RemainingUses.ToString();
+                                itemName.text = item.Key.DisplayName;
+                            }
+                            else // If player does not have the item just display zero count.
+                            {
+                                foreach (var currency in DataStoring.virtualCurrencyNames)
+                                {
+                                    if (item2.ItemClass.ToLower().Contains(currency.Value.Replace(" ", "").ToLower()))
+                                    {
+                                        int CombinedAstralCredits = 0;
+                                        if(DataStoring.VirtualCurrency[DataStoring.inverseVirtualCurrencyNames[item2.ItemClass.ToLower()]].ToString() == "AC" ||
+                                            DataStoring.VirtualCurrency[DataStoring.inverseVirtualCurrencyNames[item2.ItemClass.ToLower()]].ToString() == "FA")
+                                        {
+                                            CombinedAstralCredits += DataStoring.VirtualCurrency["AC"];
+                                            CombinedAstralCredits += DataStoring.VirtualCurrency["FA"];
+                                        }
+                                        displayImage.sprite = Resources.Load<Sprite>(item2.ItemImageUrl);
+                                        itemInformation.text = item2.Description;
+                                        itemCount.text = DataStoring.VirtualCurrency[DataStoring.inverseVirtualCurrencyNames[item2.ItemClass.ToLower()]].ToString();
+                                        itemName.text = item2.DisplayName;
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        displayImage.sprite = Resources.Load<Sprite>(item2.ItemImageUrl);
+                                        itemInformation.text = item2.Description;
+                                        itemCount.text = "0";
+                                        itemName.text = item2.DisplayName;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            informationPopup.SetActive(true);
+        } catch (Exception ex) { Debug.Log(ex); }
     }
 
     private void GetPlayerData()
@@ -210,7 +247,6 @@ public class Check_InSystem : MonoBehaviour
             getReceivedButton.interactable = true;
             StartCoroutine(receivedItemScript.GetRewardPopup(retrieveFromJson.GrantedItem));
             inventorySystem.PlayerInventory();
-            getAccountInfoScript.GetPlayerInventory();
             GetPlayerData();
         }, OnError);
     }

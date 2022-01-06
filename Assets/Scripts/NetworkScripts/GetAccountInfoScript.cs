@@ -5,6 +5,7 @@ using TMPro;
 using PlayFab;
 using PlayFab.ClientModels;
 using PlayFab.CloudScriptModels;
+using DataStoringIDError;
 
 public class GetAccountInfoScript : MonoBehaviour
 {
@@ -19,9 +20,9 @@ public class GetAccountInfoScript : MonoBehaviour
     [SerializeField] private int getStamina = 0;
     [SerializeField] private int getEtherCredits = 0;
     [SerializeField] private int getAstralCredits = 0;
-    private bool isInventoryLoadingFinished = false;
     [SerializeField] private RememberMeEncryption rememberMeEncryption;
     [SerializeField] private GameObject sessionExpired;
+    [SerializeField] private InventorySystem inventorySystem;
 
     //Private TextMeshPro
     [Header("TextMesh")]
@@ -35,7 +36,6 @@ public class GetAccountInfoScript : MonoBehaviour
     {
         if (getPlayerLevelText != null)
             StartCoroutine(WaitForInventoryFinish());
-        GetPlayerInventory();
         if(PlayerPrefs.GetString("WhatLoginWasUsed") != "guessLogin")
             GetDecrypedEmail();
         else if(PlayerPrefs.GetString("WhatLoginWasUsed") == "guessLogin")
@@ -47,7 +47,8 @@ public class GetAccountInfoScript : MonoBehaviour
         if (recievedCurrency)
         {
             recievedCurrency = false;
-            GetPlayerInventory();
+            if(inventorySystem != null)
+                inventorySystem.PlayerInventory();
         }
         if (recievedAccountExp)
         {
@@ -58,26 +59,23 @@ public class GetAccountInfoScript : MonoBehaviour
 
     private IEnumerator WaitForInventoryFinish()
     {
-        yield return new WaitUntil(() => isInventoryLoadingFinished == true);
+        yield return new WaitUntil(() => inventorySystem.isInventoryLoadingFinished == true);
+        GetPlayerInventory();
         GetPlayerAccountLevel();
     }
 
-    /// <summary>
-    /// Update Virtual Currency.
-    /// </summary>
-    public void GetPlayerInventory()
+    private void GetPlayerInventory()
     {
-        PlayFabClientAPI.GetUserInventory(new GetUserInventoryRequest(), result =>
+        try
         {
-            getStamina = result.VirtualCurrency["AR"];
+            getStamina = DataStoring.VirtualCurrency["AR"];
             agencyResourcesText.text = getStamina.ToString() + "/64";
-            getEtherCredits = result.VirtualCurrency["EC"];
+            getEtherCredits = DataStoring.VirtualCurrency["EC"];
             etherCreditText.text = getEtherCredits.ToString();
-            getAstralCredits = result.VirtualCurrency["AC"];
-            getAstralCredits += result.VirtualCurrency["FA"];
+            getAstralCredits = DataStoring.VirtualCurrency["AC"];
+            getAstralCredits += DataStoring.VirtualCurrency["FA"];
             astralCreditText.text = getAstralCredits.ToString();
-            isInventoryLoadingFinished = true;
-        }, OnError);
+        } catch (Exception ex) { Debug.Log(ex); }
     }
 
     private void GetDecrypedEmail()

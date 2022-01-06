@@ -10,6 +10,7 @@ public class InventorySystem : MonoBehaviour
 {
     [SerializeField] private Check_InSystem checkInSystem;
     private CatalogItem IncomingItem;
+    public bool isInventoryLoadingFinished = false;
 
     public void Awake()
     {
@@ -18,8 +19,12 @@ public class InventorySystem : MonoBehaviour
         {
             GetCatagoryItems();
         }
-        LoadJson();
-        StartCoroutine(WaitForJson());
+
+        if(checkInSystem != null)
+        {
+            LoadJson();
+            StartCoroutine(WaitForJson());
+        }
     }
 
     private void LoadJson()
@@ -35,27 +40,22 @@ public class InventorySystem : MonoBehaviour
                 {
                     if (item.Key.Contains("Monthly"))
                     {
-                        //Debug.Log($"Monthly");
                         DataStoring.MonthlyTitleDataJson  = item.Value;
                     } 
                     else if (item.Key.Contains("Consecutive"))
                     {
-                        //Debug.Log($"Consecutive \n {item.Value}");
                         DataStoring.ConsecutiveTitleDataJson = item.Value;
                     } 
                     else if (item.Key.Contains("Event"))
                     {
-                        //Debug.Log($"Event \n {item.Value}");
                         DataStoring.EventTitleDataJson = item.Value;
                     } 
                     else if (item.Key.Contains("AchievementTitleDataJson"))
                     {
-                       //Debug.Log($"Achievement \n {item.Value}");
                         DataStoring.AchievementTitleDataJson = item.Value;
                     } 
                     else if (item.Key.Contains("Character"))
                     {
-                        //Debug.Log($"Character \n {item.Value}");
                         DataStoring.CharacterTitleDataJson = item.Value;
                     }  
                 }
@@ -92,7 +92,8 @@ public class InventorySystem : MonoBehaviour
         PlayFabClientAPI.GetUserInventory(new GetUserInventoryRequest(), results =>
         {
             DataStoring.playerInventory = new Dictionary<ItemInstance, int>();
-            DataStoring.virtualCurrency = new Dictionary<string, string>();
+            DataStoring.virtualCurrencyNames = new Dictionary<string, string>();
+            DataStoring.VirtualCurrency = new Dictionary<string, int>(results.VirtualCurrency);
             foreach (var item in results.Inventory)
             {
                 DataStoring.playerInventory.Add(item, item.RemainingUses.Value);
@@ -101,34 +102,36 @@ public class InventorySystem : MonoBehaviour
             {
                 if (currency.Key == "AC")
                 {
-                    DataStoring.virtualCurrency.Add(currency.Key, "Astral Credit");
+                    DataStoring.virtualCurrencyNames.Add(currency.Key, "Astral Credit");
+                    DataStoring.inverseVirtualCurrencyNames.Add("astralcredit", currency.Key);
                 }
                 else if (currency.Key == "AR")
                 {
-                    DataStoring.virtualCurrency.Add(currency.Key, "Agency Resource");
-                }
-                else if (currency.Key == "AR")
-                {
-                    DataStoring.virtualCurrency.Add(currency.Key, "Agency Resource");
+                    DataStoring.virtualCurrencyNames.Add(currency.Key, "Agency Resource");
+                    DataStoring.inverseVirtualCurrencyNames.Add("agencyresource", currency.Key);
                 }
                 else if (currency.Key == "BL")
                 {
-                    DataStoring.virtualCurrency.Add(currency.Key, "Bad Luck Token");
+                    DataStoring.virtualCurrencyNames.Add(currency.Key, "Bad Luck Token");
+                    DataStoring.inverseVirtualCurrencyNames.Add("badlucktoken", currency.Key);
                 }
                 else if (currency.Key == "EC")
                 {
-                    DataStoring.virtualCurrency.Add(currency.Key, "Ethercredit");
+                    DataStoring.virtualCurrencyNames.Add(currency.Key, "Ethercredit");
+                    DataStoring.inverseVirtualCurrencyNames.Add("ethercredit", currency.Key);
                 }
                 else if (currency.Key == "FA")
                 {
-                    DataStoring.virtualCurrency.Add(currency.Key, "Free Astral Credit");
+                    DataStoring.virtualCurrencyNames.Add(currency.Key, "Free Astral Credit");
+                    DataStoring.inverseVirtualCurrencyNames.Add("freeastralcredit", currency.Key);
                 }
                 else if (currency.Key == "XP")
                 {
-                    DataStoring.virtualCurrency.Add(currency.Key, "Account Experience");
+                    DataStoring.virtualCurrencyNames.Add(currency.Key, "Account Experience");
+                    DataStoring.inverseVirtualCurrencyNames.Add("accountexperience", currency.Key);
                 }
-
             }
+            isInventoryLoadingFinished = true;
         }, OnError);
     }
 
@@ -161,6 +164,7 @@ public class InventorySystem : MonoBehaviour
         int x = 0;
         int counter = 0;
         string str = "";
+        bool isChest = false;
 
         foreach (var item in DataStoring.catalogItems)
         {
@@ -170,58 +174,65 @@ public class InventorySystem : MonoBehaviour
             }
         }
 
-        if(IncomingItem.Bundle.BundledItems.Count >= 1 && IncomingItem != null)
+        if(IncomingItem.ItemId.Contains("Chest") || IncomingItem.ItemId.Contains("chest"))
         {
-            List<string> bundleItems = new List<string>(IncomingItem.Bundle.BundledItems);
-            for (int i = 0; i < IncomingItem.Bundle.BundledItems.Count; i++)
-            {
-                x++;
-                counter++;
-                if (x >= bundleItems.Count)
-                    x = bundleItems.Count - 1;
-                if (!BundleNames.Contains(bundleItems[i]))
-                {
-                    BundleNames.Add(bundleItems[i]);
-                }
-                if (bundleItems[i] != bundleItems[x] || i == bundleItems.Count-1)
-                {
-                    BundleCount.Add(counter);
-                    counter = 0;
-                }
-            }
+            isChest = true;
+            Bundle.Add(IncomingItem, 1);
         }
 
-        if (IncomingItem.Bundle.BundledVirtualCurrencies != null)
+        if (!isChest)
         {
-            foreach (var currency in IncomingItem.Bundle.BundledVirtualCurrencies)
+            if (IncomingItem.Bundle.BundledItems.Count >= 1 && IncomingItem != null)
             {
-                foreach (var testCurrency in DataStoring.virtualCurrency)
+                List<string> bundleItems = new List<string>(IncomingItem.Bundle.BundledItems);
+                for (int i = 0; i < IncomingItem.Bundle.BundledItems.Count; i++)
                 {
-                    if (currency.Key == testCurrency.Key)
+                    x++;
+                    counter++;
+                    if (x >= bundleItems.Count)
+                        x = bundleItems.Count - 1;
+                    if (!BundleNames.Contains(bundleItems[i]))
                     {
-                        str = testCurrency.Value.Replace(" ", "").ToLower();
-                        foreach (var item in DataStoring.catalogItems)           //Item List needs to be sorted, and this process need to be sped up.
+                        BundleNames.Add(bundleItems[i]);
+                    }
+                    if (bundleItems[i] != bundleItems[x] || i == bundleItems.Count - 1)
+                    {
+                        BundleCount.Add(counter);
+                        counter = 0;
+                    }
+                }
+            }
+            if (IncomingItem.Bundle.BundledVirtualCurrencies != null)
+            {
+                foreach (var currency in IncomingItem.Bundle.BundledVirtualCurrencies)
+                {
+                    foreach (var testCurrency in DataStoring.virtualCurrencyNames)
+                    {
+                        if (currency.Key == testCurrency.Key)
                         {
-                            if (item.ItemId.ToLower() == str)
+                            str = testCurrency.Value.Replace(" ", "").ToLower();
+                            foreach (var item in DataStoring.catalogItems)           //Item List needs to be sorted, and this process need to be sped up.
                             {
-                                Bundle.Add(item, (int)currency.Value);
+                                if (item.ItemId.ToLower() == str)
+                                {
+                                    Bundle.Add(item, (int)currency.Value);
+                                }
                             }
                         }
                     }
                 }
             }
-        }
-
-        foreach (var items in DataStoring.catalogItems)
-        {
-            for (int i = 0; i < BundleNames.Count; i++)
+            foreach (var items in DataStoring.catalogItems)
             {
-                if(items.ItemId == BundleNames[i])
+                for (int i = 0; i < BundleNames.Count; i++)
                 {
-                    Bundle.Add(items, BundleCount[i]);
+                    if (items.ItemId == BundleNames[i])
+                    {
+                        Bundle.Add(items, BundleCount[i]);
+                    }
                 }
             }
-        }
+        } 
         return Bundle;
     }
 
