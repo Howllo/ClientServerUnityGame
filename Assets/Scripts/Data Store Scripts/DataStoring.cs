@@ -9,12 +9,16 @@ namespace DataStoringIDError
         public static bool isResourceBarClicked = false;
         public static bool hasRanTitleData = false;
         public static bool hasRanCatalog = false;
+        public static bool isUpdateInventory = false;
         public static string GetAPI = "";
         public static string ConsecutiveTitleDataJson = "";
         public static string EventTitleDataJson = "";
         public static string MonthlyTitleDataJson = "";
         public static string AchievementTitleDataJson = "";
         public static string CharacterTitleDataJson = "";
+        public static List<CatalogItem> basicItems = new List<CatalogItem>();
+        public static List<CatalogItem> consumablesItems = new List<CatalogItem>();
+        public static List<CatalogItem> characterGrowth = new List<CatalogItem>();
 
         /// <summary>
         /// Catalog contain all the items in "Items" catalog.
