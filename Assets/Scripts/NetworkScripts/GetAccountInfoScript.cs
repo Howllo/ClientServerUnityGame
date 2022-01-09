@@ -26,9 +26,9 @@ public class GetAccountInfoScript : MonoBehaviour
 
     //Private TextMeshPro
     [Header("TextMesh")]
-    [SerializeField] private TextMeshProUGUI agencyResourcesText;
-    [SerializeField] private TextMeshProUGUI etherCreditText;
-    [SerializeField] private TextMeshProUGUI astralCreditText;
+    [SerializeField] private TextMeshProUGUI agencyResourcesText, agencyResourceRecruitment;
+    [SerializeField] private TextMeshProUGUI etherCreditText, etherCreditCreditRecruitment;
+    [SerializeField] private TextMeshProUGUI astralCreditText, astralCreditRecruitment;
     [SerializeField] private TextMeshProUGUI playerUsernameText;
     [SerializeField] private TextMeshProUGUI getPlayerLevelText;
 
