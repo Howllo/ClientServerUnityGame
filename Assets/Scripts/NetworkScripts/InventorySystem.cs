@@ -102,33 +102,45 @@ public class InventorySystem : MonoBehaviour
             {
                 if (currency.Key == "AC")
                 {
-                    DataStoring.virtualCurrencyNames.Add(currency.Key, "Astral Credit");
-                    DataStoring.inverseVirtualCurrencyNames.Add("astralcredit", currency.Key);
+                    if (!DataStoring.virtualCurrencyNames.ContainsKey(currency.Key))
+                        DataStoring.virtualCurrencyNames.Add(currency.Key, "Astral Credit");
+                    if(!DataStoring.inverseVirtualCurrencyNames.ContainsKey(currency.Key))
+                        DataStoring.inverseVirtualCurrencyNames.Add("astralcredit", currency.Key);
                 }
                 else if (currency.Key == "AR")
                 {
-                    DataStoring.virtualCurrencyNames.Add(currency.Key, "Agency Resource");
-                    DataStoring.inverseVirtualCurrencyNames.Add("agencyresource", currency.Key);
+                    if (!DataStoring.virtualCurrencyNames.ContainsKey(currency.Key))
+                        DataStoring.virtualCurrencyNames.Add(currency.Key, "Agency Resource");
+                    if (!DataStoring.inverseVirtualCurrencyNames.ContainsKey(currency.Key))
+                        DataStoring.inverseVirtualCurrencyNames.Add("agencyresource", currency.Key);
                 }
                 else if (currency.Key == "BL")
                 {
-                    DataStoring.virtualCurrencyNames.Add(currency.Key, "Bad Luck Token");
-                    DataStoring.inverseVirtualCurrencyNames.Add("badlucktoken", currency.Key);
+                    if (!DataStoring.virtualCurrencyNames.ContainsKey(currency.Key))
+                        DataStoring.virtualCurrencyNames.Add(currency.Key, "Bad Luck Token");
+                    if (!DataStoring.inverseVirtualCurrencyNames.ContainsKey(currency.Key))
+                        DataStoring.inverseVirtualCurrencyNames.Add("badlucktoken", currency.Key);
                 }
                 else if (currency.Key == "EC")
                 {
-                    DataStoring.virtualCurrencyNames.Add(currency.Key, "Ethercredit");
-                    DataStoring.inverseVirtualCurrencyNames.Add("ethercredit", currency.Key);
+                    if (!DataStoring.virtualCurrencyNames.ContainsKey(currency.Key))
+                        DataStoring.virtualCurrencyNames.Add(currency.Key, "Ethercredit");
+                    if (!DataStoring.inverseVirtualCurrencyNames.ContainsKey(currency.Key))
+                        DataStoring.inverseVirtualCurrencyNames.Add("ethercredit", currency.Key);
                 }
                 else if (currency.Key == "FA")
                 {
-                    DataStoring.virtualCurrencyNames.Add(currency.Key, "Free Astral Credit");
-                    DataStoring.inverseVirtualCurrencyNames.Add("freeastralcredit", currency.Key);
+                    if (!DataStoring.virtualCurrencyNames.ContainsKey(currency.Key))
+                        DataStoring.virtualCurrencyNames.Add(currency.Key, "Free Astral Credit");
+                    if (!DataStoring.inverseVirtualCurrencyNames.ContainsKey(currency.Key))
+                        DataStoring.inverseVirtualCurrencyNames.Add("freeastralcredit", currency.Key);
                 }
                 else if (currency.Key == "XP")
                 {
-                    DataStoring.virtualCurrencyNames.Add(currency.Key, "Account Experience");
-                    DataStoring.inverseVirtualCurrencyNames.Add("accountexperience", currency.Key);
+                    if (!DataStoring.virtualCurrencyNames.ContainsKey(currency.Key))
+                        DataStoring.virtualCurrencyNames.Add(currency.Key, "Account Experience");
+                    if (!DataStoring.inverseVirtualCurrencyNames.ContainsKey(currency.Key))
+                        DataStoring.inverseVirtualCurrencyNames.Add("accountexperience", currency.Key);
                 }
             }
             isInventoryLoadingFinished = true;
@@ -147,6 +159,21 @@ public class InventorySystem : MonoBehaviour
         }, results =>
         {
             DataStoring.catalogItems = new List<CatalogItem>(results.Catalog);
+            foreach(var items in results.Catalog)
+            {
+                if(items.ItemClass == "basicItem")
+                {
+                    DataStoring.basicItems.Add(items);
+                }
+                if (items.ItemClass == "consumable")
+                {
+                    DataStoring.consumablesItems.Add(items);  
+                } 
+                if(items.ItemClass == "growthItem")
+                {
+                    DataStoring.characterGrowth.Add(items);
+                }
+            }
             DataStoring.hasRanCatalog = true;
         }, OnError);
     }
