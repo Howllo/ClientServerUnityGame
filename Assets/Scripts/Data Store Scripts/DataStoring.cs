@@ -16,9 +16,14 @@ namespace DataStoringIDError
         public static string MonthlyTitleDataJson = "";
         public static string AchievementTitleDataJson = "";
         public static string CharacterTitleDataJson = "";
-        public static List<CatalogItem> basicItems = new List<CatalogItem>();
-        public static List<CatalogItem> consumablesItems = new List<CatalogItem>();
-        public static List<CatalogItem> characterGrowth = new List<CatalogItem>();
+
+        public static List<ItemInstance> basicItems = new List<ItemInstance>();
+        public static List<ItemInstance> growthItem = new List<ItemInstance>();
+        public static List<ItemInstance> consumablesItems = new List<ItemInstance>();
+        public static List<CatalogItem> basicItemCata = new List<CatalogItem>();
+        public static List<CatalogItem> grwothItemsCata = new List<CatalogItem>();
+        public static List<CatalogItem> consumablesItemsCata = new List<CatalogItem>();
+
 
         /// <summary>
         /// Catalog contain all the items in "Items" catalog.
@@ -33,7 +38,7 @@ namespace DataStoringIDError
         /// <summary>
         /// Player inventory contains all the items in the players inventory.
         /// </summary>
-        public static Dictionary<ItemInstance, int> playerInventory = new Dictionary<ItemInstance, int>();
+        public static List<ItemInstance> playerInventory = new List<ItemInstance>();
 
         /// <summary>
         /// Virtual Currency Name key is "EC" with value of "Ethercredits". This allow access to names.

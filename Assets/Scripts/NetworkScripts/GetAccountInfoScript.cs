@@ -39,7 +39,7 @@ public class GetAccountInfoScript : MonoBehaviour
         if(PlayerPrefs.GetString("WhatLoginWasUsed") != "guessLogin")
             GetDecrypedEmail();
         else if(PlayerPrefs.GetString("WhatLoginWasUsed") == "guessLogin")
-                CustomGetUserDisplayName();
+            CustomGetUserDisplayName();
     }
 
     private void Update()

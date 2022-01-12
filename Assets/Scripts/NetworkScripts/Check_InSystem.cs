@@ -136,16 +136,17 @@ public class Check_InSystem : MonoBehaviour
             {
                 foreach (var item2 in DataStoring.catalogItems)
                 {
-                    if (item2.ItemId == bundle.Key.ItemId)
+                    if (String.Equals(item2.ItemId, bundle.Key.ItemId, StringComparison.InvariantCultureIgnoreCase))
                     {
                         foreach (var item in DataStoring.playerInventory)
                         {
-                            if (item2.ItemId == item.Key.ItemId)
+                            Debug.Log($"{item2.ItemId} to {item.ItemId}.");
+                            if (item2.ItemId == item.ItemId)
                             {
                                 displayImage.sprite = Resources.Load<Sprite>(item2.ItemImageUrl);
                                 itemInformation.text = item2.Description;
-                                itemCount.text = item.Key.RemainingUses.ToString();
-                                itemName.text = item.Key.DisplayName;
+                                itemCount.text = item.RemainingUses.ToString();
+                                itemName.text = item.DisplayName;
                             }
                             else // If player does not have the item just display zero count.
                             {
@@ -153,16 +154,20 @@ public class Check_InSystem : MonoBehaviour
                                 {
                                     if (item2.ItemClass.ToLower().Contains(currency.Value.Replace(" ", "").ToLower()))
                                     {
-                                        int CombinedAstralCredits = 0;
-                                        if(DataStoring.VirtualCurrency[DataStoring.inverseVirtualCurrencyNames[item2.ItemClass.ToLower()]].ToString() == "AC" ||
-                                            DataStoring.VirtualCurrency[DataStoring.inverseVirtualCurrencyNames[item2.ItemClass.ToLower()]].ToString() == "FA")
+                                        int virutalCurrencyTotal = 0;
+                                        if (item2.ItemId.Equals("astralcredit", StringComparison.OrdinalIgnoreCase) || item2.ItemId.Equals("freeastralcredit", StringComparison.OrdinalIgnoreCase))
                                         {
-                                            CombinedAstralCredits += DataStoring.VirtualCurrency["AC"];
-                                            CombinedAstralCredits += DataStoring.VirtualCurrency["FA"];
+                                            virutalCurrencyTotal += DataStoring.VirtualCurrency["AC"];
+                                            virutalCurrencyTotal += DataStoring.VirtualCurrency["FA"];
                                         }
+                                        else
+                                        {
+                                            virutalCurrencyTotal = DataStoring.VirtualCurrency[DataStoring.inverseVirtualCurrencyNames[item2.ItemClass.ToLower()]];
+                                        }
+
                                         displayImage.sprite = Resources.Load<Sprite>(item2.ItemImageUrl);
                                         itemInformation.text = item2.Description;
-                                        itemCount.text = DataStoring.VirtualCurrency[DataStoring.inverseVirtualCurrencyNames[item2.ItemClass.ToLower()]].ToString();
+                                        itemCount.text = virutalCurrencyTotal.ToString();
                                         itemName.text = item2.DisplayName;
                                         break;
                                     }
@@ -173,6 +178,40 @@ public class Check_InSystem : MonoBehaviour
                                         itemCount.text = "0";
                                         itemName.text = item2.DisplayName;
                                     }
+                                }
+                            }
+                        }
+                        if (DataStoring.playerInventory.Count == 0)
+                        {
+                            foreach (var currency in DataStoring.virtualCurrencyNames)
+                            {
+                                if (item2.ItemClass.ToLower().Contains(currency.Value.Replace(" ", "").ToLower()))
+                                {
+                                    int virutalCurrencyTotal = 0;
+
+                                    //Get the right amount of currency no matter
+                                    if (item2.ItemId.Equals("astralcredit", StringComparison.OrdinalIgnoreCase) || item2.ItemId.Equals("freeastralcredit", StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        virutalCurrencyTotal += DataStoring.VirtualCurrency["AC"];
+                                        virutalCurrencyTotal += DataStoring.VirtualCurrency["FA"];
+                                    } 
+                                    else
+                                    {
+                                        virutalCurrencyTotal = DataStoring.VirtualCurrency[DataStoring.inverseVirtualCurrencyNames[item2.ItemClass.ToLower()]];
+                                    }
+
+                                    displayImage.sprite = Resources.Load<Sprite>(item2.ItemImageUrl);
+                                    itemInformation.text = item2.Description;
+                                    itemCount.text = virutalCurrencyTotal.ToString();
+                                    itemName.text = item2.DisplayName;
+                                    break;
+                                }
+                                else
+                                {
+                                    displayImage.sprite = Resources.Load<Sprite>(item2.ItemImageUrl);
+                                    itemInformation.text = item2.Description;
+                                    itemCount.text = "0";
+                                    itemName.text = item2.DisplayName;
                                 }
                             }
                         }

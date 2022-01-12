@@ -83,7 +83,6 @@ public class InventorySystem : MonoBehaviour
         }
     }
 
-
     /// <summary>
     /// Inventory system that allows updating and getting of the player inventory. Requires "using DataStoringIDError".
     /// </summary>
@@ -91,23 +90,52 @@ public class InventorySystem : MonoBehaviour
     {
         PlayFabClientAPI.GetUserInventory(new GetUserInventoryRequest(), results =>
         {
-            DataStoring.playerInventory = new Dictionary<ItemInstance, int>();
-            DataStoring.virtualCurrencyNames = new Dictionary<string, string>();
+            if(DataStoring.playerInventory.Count > 0)
+            {
+                DataStoring.playerInventory.Clear();
+            } 
+            if(DataStoring.virtualCurrencyNames.Count > 0)
+            {
+                DataStoring.virtualCurrencyNames.Clear();
+            } 
+            if(DataStoring.VirtualCurrency.Count > 0)
+            {
+                DataStoring.VirtualCurrency.Clear();
+            } 
+            if(DataStoring.inverseVirtualCurrencyNames.Count > 0)
+            {
+                DataStoring.inverseVirtualCurrencyNames.Clear();
+            }
+
             DataStoring.VirtualCurrency = new Dictionary<string, int>(results.VirtualCurrency);
+            DataStoring.playerInventory = new List<ItemInstance>(results.Inventory);
+           
             foreach (var item in results.Inventory)
             {
-                DataStoring.playerInventory.Add(item, item.RemainingUses.Value);
+                if (item.ItemClass.Equals("basicItem", StringComparison.OrdinalIgnoreCase))
+                {
+                    DataStoring.basicItems.Add(item);
+                } 
+                else if (item.ItemClass.Equals("growthItem", StringComparison.OrdinalIgnoreCase))
+                {
+                    DataStoring.growthItem.Add(item);
+                } 
+                else if (item.ItemClass.Equals("consumable", StringComparison.OrdinalIgnoreCase))
+                {
+                    DataStoring.growthItem.Add(item);
+                }
             }
+
             foreach(var currency in results.VirtualCurrency)
             {
                 if (currency.Key == "AC")
                 {
                     if (!DataStoring.virtualCurrencyNames.ContainsKey(currency.Key))
                         DataStoring.virtualCurrencyNames.Add(currency.Key, "Astral Credit");
-                    if(!DataStoring.inverseVirtualCurrencyNames.ContainsKey(currency.Key))
+                    if (!DataStoring.inverseVirtualCurrencyNames.ContainsKey(currency.Key))
                         DataStoring.inverseVirtualCurrencyNames.Add("astralcredit", currency.Key);
                 }
-                else if (currency.Key == "AR")
+                else if (currency.Key.Equals("AR"))
                 {
                     if (!DataStoring.virtualCurrencyNames.ContainsKey(currency.Key))
                         DataStoring.virtualCurrencyNames.Add(currency.Key, "Agency Resource");
@@ -159,19 +187,20 @@ public class InventorySystem : MonoBehaviour
         }, results =>
         {
             DataStoring.catalogItems = new List<CatalogItem>(results.Catalog);
+
             foreach(var items in results.Catalog)
             {
                 if(items.ItemClass == "basicItem")
                 {
-                    DataStoring.basicItems.Add(items);
+                    DataStoring.basicItemCata.Add(items);
+                }
+                if(items.ItemClass == "growthItem")
+                {
+                    DataStoring.grwothItemsCata.Add(items);
                 }
                 if (items.ItemClass == "consumable")
                 {
-                    DataStoring.consumablesItems.Add(items);  
-                } 
-                if(items.ItemClass == "growthItem")
-                {
-                    DataStoring.characterGrowth.Add(items);
+                    DataStoring.consumablesItemsCata.Add(items);
                 }
             }
             DataStoring.hasRanCatalog = true;
