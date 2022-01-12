@@ -230,7 +230,7 @@ public class InventorySystem : MonoBehaviour
             }
         }
 
-        if(IncomingItem.ItemId.Contains("Chest") || IncomingItem.ItemId.Contains("chest"))
+        if (IncomingItem.ItemId.ToUpper().Contains("CHEST"))
         {
             isChest = true;
             Bundle.Add(IncomingItem, 1);
