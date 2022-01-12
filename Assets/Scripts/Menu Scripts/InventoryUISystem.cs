@@ -342,7 +342,7 @@ public class InventoryUISystem : MonoBehaviour
                     }
                 }
             }
-            informationPopup.SetActive(true);
+            item_Information.SetActive(true);
         }
         catch (Exception ex) { Debug.Log(ex); }
     }
