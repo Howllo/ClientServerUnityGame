@@ -29,7 +29,6 @@ public class InventoryUISystem : MonoBehaviour
     private GameObject LastGO;
     private Button lastButton;
     private TextMeshProUGUI child;
-    int i = 0;
 
     private void Start()
     {
@@ -76,22 +75,27 @@ public class InventoryUISystem : MonoBehaviour
         lastButton.interactable = true;
         lastButton = All_ItemsButton;
         All_ItemsButton.interactable = false;
+        int i = 0;
 
         foreach (var item in DataStoring.playerInventory)
         {
             foreach (var item2 in DataStoring.catalogItems)
             {
-                if (item.ItemClass.Equals("basicItem", StringComparison.OrdinalIgnoreCase)
-                    || item.ItemClass.Equals("consumable", StringComparison.OrdinalIgnoreCase) 
-                    || item.ItemClass.Equals("growthItem", StringComparison.OrdinalIgnoreCase))
+                if(String.Equals(item2.ItemId, item.ItemId, StringComparison.OrdinalIgnoreCase))
                 {
-                    Inventory[i] = Instantiate(clickableReward, transform.position, Quaternion.identity);
-                    Inventory[i].gameObject.name = $"{item.ItemId}";
-                    Inventory[i].transform.SetParent(parentObject[0].gameObject.transform, false);
-                    child = Inventory[i].transform.GetChild(2).GetComponent<TextMeshProUGUI>();
-                    child.text = item.RemainingUses.ToString();
-                    Inventory[i].transform.GetChild(0).GetComponent<Image>().sprite = Resources.Load<Sprite>(item2.ItemImageUrl);
-                    Inventory[i].GetComponent<Button>().onClick.AddListener(ClickedItem);
+                    if (item.ItemClass.Equals("basicItem", StringComparison.OrdinalIgnoreCase)
+                    || item.ItemClass.Equals("consumable", StringComparison.OrdinalIgnoreCase)
+                    || item.ItemClass.Equals("growthItem", StringComparison.OrdinalIgnoreCase))
+                    {
+                        Inventory.Add(Instantiate(clickableReward, transform.position, Quaternion.identity));
+                        Inventory[i].gameObject.name = $"{item.ItemId}";
+                        Inventory[i].transform.SetParent(parentObject[0].gameObject.transform, false);
+                        child = Inventory[i].transform.GetChild(2).GetComponent<TextMeshProUGUI>();
+                        child.text = item.RemainingUses.ToString();
+                        Inventory[i].transform.GetChild(0).GetComponent<Image>().sprite = Resources.Load<Sprite>(item2.ItemImageUrl);
+                        Inventory[i].GetComponent<Button>().onClick.AddListener(ClickedItem);
+                        break;
+                    }
                 }
             }
             i++;
@@ -107,6 +111,7 @@ public class InventoryUISystem : MonoBehaviour
         {
             LastGO.SetActive(false);
             lastButton.interactable = true;
+            LastGO = All_Items_Page_GO;
             lastButton = All_ItemsButton;
             All_ItemsButton.interactable = false;
             GetAllInventory();
@@ -116,6 +121,7 @@ public class InventoryUISystem : MonoBehaviour
         {
             LastGO.SetActive(false);
             lastButton.interactable = true;
+            LastGO = BasicItems_Page_GO;
             lastButton = BasicItems_Button;
             BasicItems_Button.interactable = false;
             GetBasicItems();
@@ -125,6 +131,7 @@ public class InventoryUISystem : MonoBehaviour
         {
             LastGO.SetActive(false);
             lastButton.interactable = true;
+            LastGO = GrowthItems_Page_GO;
             lastButton = GrowthItems_Button;
             GrowthItems_Button.interactable = false;
             GetGrowthItems();
@@ -134,6 +141,7 @@ public class InventoryUISystem : MonoBehaviour
         {
             LastGO.SetActive(false);
             lastButton.interactable = true;
+            LastGO = Consumable_Page_GO;
             lastButton = Consumable_Button;
             Consumable_Button.interactable = false;
             GetConsumableItems();
@@ -143,7 +151,8 @@ public class InventoryUISystem : MonoBehaviour
     
     private void GetAllInventory()
     {
-        if(Inventory.Count == 0 || DataStoring.isUpdateInventory)
+        int i = 0;
+        if (Inventory.Count == 0 || DataStoring.isUpdateInventory)
         {
             foreach (var item in DataStoring.playerInventory)
             {
@@ -155,7 +164,7 @@ public class InventoryUISystem : MonoBehaviour
                     {
                         if (item.ItemId.Equals(item2.ItemId, StringComparison.OrdinalIgnoreCase))
                         {
-                            Inventory[i] = Instantiate(clickableReward, transform.position, Quaternion.identity);
+                            Inventory.Add(Instantiate(clickableReward, transform.position, Quaternion.identity));
                             Inventory[i].gameObject.name = $"{item.ItemId}";
                             Inventory[i].transform.SetParent(parentObject[0].gameObject.transform, false);
                             child = Inventory[i].transform.GetChild(2).GetComponent<TextMeshProUGUI>();
@@ -173,6 +182,7 @@ public class InventoryUISystem : MonoBehaviour
 
     public void GetBasicItems()
     {
+        int i = 0;
         if (BasicItemList.Count == 0 || DataStoring.isUpdateInventory)
         {
             foreach (var item in DataStoring.basicItems)
@@ -183,7 +193,7 @@ public class InventoryUISystem : MonoBehaviour
                     {
                         if (item.ItemClass.Equals("basicItem", StringComparison.OrdinalIgnoreCase))
                         {
-                            BasicItemList[i] = Instantiate(clickableReward, transform.position, Quaternion.identity);
+                            BasicItemList.Add(Instantiate(clickableReward, transform.position, Quaternion.identity));
                             BasicItemList[i].gameObject.name = $"{item.ItemId}";
                             BasicItemList[i].transform.SetParent(parentObject[1].gameObject.transform, false);
                             child = BasicItemList[i].transform.GetChild(2).GetComponent<TextMeshProUGUI>();
@@ -201,7 +211,8 @@ public class InventoryUISystem : MonoBehaviour
 
     public void GetGrowthItems()
     {
-        if(GrowthList.Count == 0 || DataStoring.isUpdateInventory)
+        int i = 0;
+        if (GrowthList.Count == 0 || DataStoring.isUpdateInventory)
         {
             foreach (var item in DataStoring.growthItem)
             {
@@ -209,7 +220,7 @@ public class InventoryUISystem : MonoBehaviour
                 {
                     if (item.ItemClass.Equals("growthItem", StringComparison.OrdinalIgnoreCase))
                     {
-                        GrowthList[i] = Instantiate(clickableReward, transform.position, Quaternion.identity);
+                        GrowthList.Add(Instantiate(clickableReward, transform.position, Quaternion.identity));
                         GrowthList[i].gameObject.name = $"{item.ItemId}";
                         GrowthList[i].transform.SetParent(parentObject[2].gameObject.transform, false);
                         child = GrowthList[i].transform.GetChild(2).GetComponent<TextMeshProUGUI>();
@@ -226,7 +237,8 @@ public class InventoryUISystem : MonoBehaviour
 
     public void GetConsumableItems()
     {
-        if(ConsumablesList.Count == 0 || DataStoring.isUpdateInventory)
+        int i = 0;
+        if (ConsumablesList.Count == 0 || DataStoring.isUpdateInventory)
         {
             foreach (var item in DataStoring.consumablesItems)
             {
@@ -234,7 +246,7 @@ public class InventoryUISystem : MonoBehaviour
                 {
                     if (item.ItemClass.Equals("consumable", StringComparison.OrdinalIgnoreCase))
                     {
-                        ConsumablesList[i] = Instantiate(clickableReward, transform.position, Quaternion.identity);
+                        ConsumablesList.Add(Instantiate(clickableReward, transform.position, Quaternion.identity));
                         ConsumablesList[i].gameObject.name = $"{item.ItemId}";
                         ConsumablesList[i].transform.SetParent(parentObject[3].gameObject.transform, false);
                         child = ConsumablesList[i].transform.GetChild(2).GetComponent<TextMeshProUGUI>();
@@ -252,68 +264,22 @@ public class InventoryUISystem : MonoBehaviour
     private void ClickedItem()
     {
         string itemClicked = EventSystem.current.currentSelectedGameObject.name;
-        Dictionary<CatalogItem, int> bundleHolder = new Dictionary<CatalogItem, int>(inventorySystem.GetBundleCount(itemClicked));
 
         try
         {
-            foreach (var bundle in bundleHolder)
+            foreach (var item2 in DataStoring.catalogItems)
             {
-                foreach (var item2 in DataStoring.catalogItems)
+                if (String.Equals(item2.ItemId, itemClicked, StringComparison.InvariantCultureIgnoreCase))
                 {
-                    if (String.Equals(item2.ItemId, bundle.Key.ItemId, StringComparison.InvariantCultureIgnoreCase))
+                    foreach (var item in DataStoring.playerInventory)
                     {
-                        foreach (var item in DataStoring.playerInventory)
-                        {
-                            Debug.Log($"{item2.ItemId} to {item.ItemId}.");
-                            if (item2.ItemId == item.ItemId)
-                            {
-                                displayImage.sprite = Resources.Load<Sprite>(item2.ItemImageUrl);
-                                itemInformation.text = item2.Description;
-                                itemCount.text = item.RemainingUses.ToString();
-                                itemName.text = item.DisplayName;
-                            }
-                            else // If player does not have the item just display zero count.
-                            {
-                                foreach (var currency in DataStoring.virtualCurrencyNames)
-                                {
-                                    if (item2.ItemClass.ToLower().Contains(currency.Value.Replace(" ", "").ToLower()))
-                                    {
-                                        int virutalCurrencyTotal = 0;
-                                        if (item2.ItemId.Equals("astralcredit", StringComparison.OrdinalIgnoreCase) || item2.ItemId.Equals("freeastralcredit", StringComparison.OrdinalIgnoreCase))
-                                        {
-                                            virutalCurrencyTotal += DataStoring.VirtualCurrency["AC"];
-                                            virutalCurrencyTotal += DataStoring.VirtualCurrency["FA"];
-                                        }
-                                        else
-                                        {
-                                            virutalCurrencyTotal = DataStoring.VirtualCurrency[DataStoring.inverseVirtualCurrencyNames[item2.ItemClass.ToLower()]];
-                                        }
-
-                                        displayImage.sprite = Resources.Load<Sprite>(item2.ItemImageUrl);
-                                        itemInformation.text = item2.Description;
-                                        itemCount.text = virutalCurrencyTotal.ToString();
-                                        itemName.text = item2.DisplayName;
-                                        break;
-                                    }
-                                    else
-                                    {
-                                        displayImage.sprite = Resources.Load<Sprite>(item2.ItemImageUrl);
-                                        itemInformation.text = item2.Description;
-                                        itemCount.text = "0";
-                                        itemName.text = item2.DisplayName;
-                                    }
-                                }
-                            }
-                        }
-                        if (DataStoring.playerInventory.Count == 0)
+                        if (item2.ItemId == item.ItemId)
                         {
                             foreach (var currency in DataStoring.virtualCurrencyNames)
                             {
                                 if (item2.ItemClass.ToLower().Contains(currency.Value.Replace(" ", "").ToLower()))
                                 {
                                     int virutalCurrencyTotal = 0;
-
-                                    //Get the right amount of currency no matter
                                     if (item2.ItemId.Equals("astralcredit", StringComparison.OrdinalIgnoreCase) || item2.ItemId.Equals("freeastralcredit", StringComparison.OrdinalIgnoreCase))
                                     {
                                         virutalCurrencyTotal += DataStoring.VirtualCurrency["AC"];
@@ -334,8 +300,8 @@ public class InventoryUISystem : MonoBehaviour
                                 {
                                     displayImage.sprite = Resources.Load<Sprite>(item2.ItemImageUrl);
                                     itemInformation.text = item2.Description;
-                                    itemCount.text = "0";
-                                    itemName.text = item2.DisplayName;
+                                    itemCount.text = item.RemainingUses.ToString();
+                                    itemName.text = item.DisplayName;
                                 }
                             }
                         }
