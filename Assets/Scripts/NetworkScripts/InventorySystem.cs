@@ -54,7 +54,7 @@ public class InventorySystem : MonoBehaviour
                     {
                         DataStoring.AchievementTitleDataJson = item.Value;
                     } 
-                    else if (item.Key.Contains("Character"))
+                    else if (item.Key.Contains("character"))
                     {
                         DataStoring.CharacterTitleDataJson = item.Value;
                     }  
@@ -106,6 +106,10 @@ public class InventorySystem : MonoBehaviour
             {
                 DataStoring.inverseVirtualCurrencyNames.Clear();
             }
+            if(DataStoring.characterItemList.Count > 0)
+            {
+                DataStoring.characterItemList.Clear();
+            }
 
             DataStoring.VirtualCurrency = new Dictionary<string, int>(results.VirtualCurrency);
             DataStoring.playerInventory = new List<ItemInstance>(results.Inventory);
@@ -123,6 +127,10 @@ public class InventorySystem : MonoBehaviour
                 else if (item.ItemClass.Equals("consumable", StringComparison.OrdinalIgnoreCase))
                 {
                     DataStoring.growthItem.Add(item);
+                }
+                if (item.ItemClass.Equals("character"))
+                {
+                    DataStoring.characterItemList.Add(item);
                 }
             }
 

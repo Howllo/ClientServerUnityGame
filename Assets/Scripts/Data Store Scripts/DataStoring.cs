@@ -49,5 +49,21 @@ namespace DataStoringIDError
         /// Inverse VC name is the opposite of Virtual Currency names. This contain keys of "astralcredit" to value of "AC".
         /// </summary>
         public static Dictionary<string, string> inverseVirtualCurrencyNames = new Dictionary<string, string>();
+
+        /// <summary>
+        /// Get all the player current character in their inventory and store it into a ItemInstance list.
+        /// This will be able to pull the custom and push custom data to the player's character item.
+        /// </summary>
+        public static List<ItemInstance> characterItemList = new List<ItemInstance>();
+
+        /// <summary>
+        /// Currently using agents that the players has selected. This only holds up to 18 agent characters.
+        /// </summary>
+        public static List<ItemInstance> agencyCharacters = new List<ItemInstance>();
+
+        /// <summary>
+        /// The current characters for the player operator list. This can only hold up to 4 operator characters.
+        /// </summary>
+        public static List<ItemInstance> operatorCharacter = new List<ItemInstance>();
     }
 }

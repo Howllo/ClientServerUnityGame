@@ -16,7 +16,7 @@ public class Check_InSystem : MonoBehaviour
     [Header("Scripts")]
     [SerializeField] private InventorySystem inventorySystem;
     [SerializeField] private GetAccountInfoScript getAccountInfoScript;
-    [SerializeField] private ReceivedItemScript receivedItemScript;
+    [SerializeField] private InstaniatingUISystem receivedItemScript;
     [SerializeField] private AudioManagement audioManagement;
 
     [Header("What Type of Popup")]
@@ -140,7 +140,6 @@ public class Check_InSystem : MonoBehaviour
                     {
                         foreach (var item in DataStoring.playerInventory)
                         {
-                            Debug.Log($"{item2.ItemId} to {item.ItemId}.");
                             if (item2.ItemId == item.ItemId)
                             {
                                 displayImage.sprite = Resources.Load<Sprite>(item2.ItemImageUrl);

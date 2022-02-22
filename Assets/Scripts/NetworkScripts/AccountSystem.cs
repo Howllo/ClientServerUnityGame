@@ -1,6 +1,5 @@
 using System;
 using System.Collections;
-using System.Collections.Generic;
 using Random = UnityEngine.Random;
 using UnityEngine;
 using UnityEngine.UI;
@@ -55,13 +54,6 @@ public class AccountSystem : MonoBehaviour
     [Header("Guess Login")]
     [SerializeField] private Button guessLoginButton;
 
-    [Header("ServerSelection")]
-    [SerializeField] private Button globalServerButton;
-    [SerializeField] private Button europeServerButton;
-    [SerializeField] private Button asiaServerButton;
-    [SerializeField] private Button koreaServerButton;
-    [SerializeField] private GameObject serverSelectionPopup;
-
     [Header("ForgotPassword")]
     [SerializeField] private TMP_InputField resetPasswordInputField;
     [SerializeField] private string resetPasswordInput;
@@ -71,8 +63,8 @@ public class AccountSystem : MonoBehaviour
 
     [Header("Logout")]
     [SerializeField] private GameObject loginButtons;
-    [SerializeField] private GameObject topRightCanvas;
     [SerializeField] private Button logOutButton;
+    [SerializeField] private GameObject LogoutButton, ServerSelectionButton;
 
     //Error Variables
     [Header("Error Variables")]
@@ -126,10 +118,6 @@ public class AccountSystem : MonoBehaviour
         pressAnyButton.onClick.AddListener(SaveLoginInformation);
         loginCloseButton.onClick.AddListener(ResetLoginFields);
         registerCloseButton.onClick.AddListener(ResetRegisterFields);
-        //globalServerButton.onClick.addListener();
-        //europeServerButton.onClick.AddListener();
-        //asiaServerButton.onClick.AddListener();
-        //koreaServerButton.onClick.AddListener();
 
 #if UNITY_64
         confirmTosGuessButton.onClick.AddListener(GuessLoginRequest64Bit);
@@ -305,7 +293,6 @@ public class AccountSystem : MonoBehaviour
 
     private void OnUserSuccess(UpdateUserTitleDisplayNameResult results)
     {
-        topRightCanvas.SetActive(true);
         usernamePopup.SetActive(false);
         dimmerCanvas.SetActive(false);
         loginButtons.SetActive(false);
@@ -515,7 +502,8 @@ private void LoginGameRequest()
         accountInfoID = result.PlayFabId.ToString();
         getAccountIDGO.SetActive(true);
         IsLoggedIn = true;
-        topRightCanvas.SetActive(true);
+        LogoutButton.SetActive(true);
+        ServerSelectionButton.SetActive(true);
         loginPopup.SetActive(false);
         dimmerCanvas.SetActive(false);
         loginButtons.SetActive(false);
@@ -556,7 +544,8 @@ private void LoginGameRequest()
         accountInfoID = result.PlayFabId.ToString();
         getAccountIDGO.SetActive(true);
         IsLoggedIn = true;
-        topRightCanvas.SetActive(true);
+        LogoutButton.SetActive(true);
+        ServerSelectionButton.SetActive(true);
         loginPopup.SetActive(false);
         loginButtons.SetActive(false);
         SaveLoginGuessInformation();
@@ -611,7 +600,7 @@ private void LoginGameRequest()
         PlayerPrefs.DeleteKey("WhatLoginWasUsed");
         IsLoggedIn = false;
         getAccountIDGO.SetActive(false);
-        topRightCanvas.SetActive(false);
+        //topRightCanvas.SetActive(false);
         loginButtons.SetActive(true);
         menuPressAnyButton.SetActive(false);
         menuPressAnykey.SetActive(false);
